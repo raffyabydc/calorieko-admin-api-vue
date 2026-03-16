@@ -107,7 +107,7 @@ class UserProfileController extends Controller
         
         try {
             // Using Firebase Identity Toolkit REST API directly to bypass OAuth signature issues
-            $apiKey = config('services.firebase.web_api_key', 'AIzaSyCCHAzAg5VBKJR1SK3aCG2n-rpFhhEBTRc');
+            $apiKey = config('services.firebase.web_api_key');
             $response = \Illuminate\Support\Facades\Http::post("https://identitytoolkit.googleapis.com/v1/accounts:sendOobCode?key={$apiKey}", [
                 'requestType' => 'PASSWORD_RESET',
                 'email' => $profile->email
