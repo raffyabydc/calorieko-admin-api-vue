@@ -4,9 +4,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/{any}', function () {
+    return view('app');
+})->where('any', '.*');
 
 // Custom Firebase Auth Action Handler
 Route::match(['get', 'post'], '/__/auth/action', function (Request $request) {
