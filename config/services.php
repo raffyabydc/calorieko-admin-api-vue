@@ -35,4 +35,8 @@ return [
         ],
     ],
 
+    'firebase' => [
+        'web_api_key' => env('FIREBASE_API_KEY'),
+    ],
+
 ];

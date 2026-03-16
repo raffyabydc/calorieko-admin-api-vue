@@ -12,7 +12,7 @@ Route::get('/{any}', function () {
 Route::match(['get', 'post'], '/__/auth/action', function (Request $request) {
     $mode = $request->query('mode');
     $oobCode = $request->query('oobCode');
-    $apiKey = config('services.firebase.web_api_key', 'AIzaSyCCHAzAg5VBKJR1SK3aCG2n-rpFhhEBTRc');
+    $apiKey = config('services.firebase.web_api_key');
 
     if (!$mode || !$oobCode) {
         return response('Invalid or missing authentication codes.', 400);
