@@ -66,7 +66,7 @@ const chartOptions = {
 onMounted(async () => {
   try {
     const logs = await getMealLogs()
-    
+
     // Aggregate item frequencies
     const itemCounts = {}
     logs.forEach(log => {
@@ -80,7 +80,7 @@ onMounted(async () => {
 
       if (items && Array.isArray(items)) {
         items.forEach(item => {
-          const name = item.name || 'Unknown Item'
+            const name = item.dish_name || 'Unknown Item'
           itemCounts[name] = (itemCounts[name] || 0) + 1
         })
       }
