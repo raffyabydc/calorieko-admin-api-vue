@@ -9,7 +9,7 @@
             <span>CK</span>
           </div>
           <div class="sidebar__logo-text">
-            <h2>CalorieKo take 2</h2>
+            <h2>CalorieKo</h2>
             <p>Research Portal</p>
           </div>
         </div>
