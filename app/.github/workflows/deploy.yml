@@ -1,0 +1,41 @@
+name: Deploy Laravel and Vue App
+
+on:
+  push:
+    branches:
+      - main # Change this if your default branch is different
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Run Full Stack Deployment
+        run: |
+          # Navigate to your local project directory
+          cd /var/www/calorieko-admin
+          
+          # 1. Put Laravel into Maintenance Mode (Optional but recommended)
+          php artisan down || true
+          
+          # 2. Pull the latest code from GitHub
+          git pull origin main
+          
+          # 3. Backend: Install PHP dependencies
+          composer install --no-interaction --prefer-dist --optimize-autoloader
+          
+          # 4. Frontend: Install Node dependencies and compile Vue assets
+          npm install
+          npm run build
+          
+          # 5. Database: Run migrations automatically (using --force for production)
+          php artisan migrate --force
+          
+          # 6. Optimization: Clear old caches and build new ones for performance
+          php artisan optimize:clear
+          php artisan config:cache
+          php artisan event:cache
+          php artisan route:cache
+          php artisan view:cache
+          
+          # 7. Bring Laravel out of Maintenance Mode
+          php artisan up
