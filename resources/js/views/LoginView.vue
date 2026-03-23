@@ -14,7 +14,7 @@
           <div class="login-page__logo">
             <span>CK</span>
           </div>
-          <h1 class="login-page__title">CalorieKo ni robert</h1>
+          <h1 class="login-page__title">CalorieKo</h1>
           <p class="login-page__subtitle">Admin & Data Management Portal</p>
         </div>
 
