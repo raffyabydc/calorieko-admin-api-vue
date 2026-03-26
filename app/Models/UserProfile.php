@@ -26,12 +26,22 @@ class UserProfile extends Model
         'is_active',
     ];
 
-    protected $casts = [
-        'age'       => 'integer',
-        'weight'    => 'double',
-        'height'    => 'double',
-        'streak'    => 'integer',
-        'level'     => 'integer',
-        'is_active' => 'boolean',
-    ];
+    /**
+     * Get the attributes that should be cast.
+     *
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'name'      => 'encrypted',
+            'email'     => 'encrypted',
+            'age'       => 'integer',
+            'weight'    => 'double',
+            'height'    => 'double',
+            'streak'    => 'integer',
+            'level'     => 'integer',
+            'is_active' => 'boolean',
+        ];
+    }
 }
