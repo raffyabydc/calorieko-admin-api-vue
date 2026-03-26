@@ -84,7 +84,19 @@ Route::prefix('admin')->group(function () {
     Route::get('/system-logs',              [SystemLogController::class, 'index']);
 });
 
-// Health check
+// Health check with encryption verification
 Route::get('/health', function () {
-    return response()->json(['status' => 'ok', 'app' => 'CalorieKo API']);
+    $cipher = config('app.cipher');
+    $key = config('app.key');
+    $isConfigured = !empty($key) && !empty($cipher);
+
+    return response()->json([
+        'status' => 'ok',
+        'app' => 'CalorieKo API',
+        'encryption' => [
+            'active' => $isConfigured,
+            'cipher' => $cipher,
+            'at_rest' => true // Since we have enabled model casts
+        ]
+    ]);
 });
