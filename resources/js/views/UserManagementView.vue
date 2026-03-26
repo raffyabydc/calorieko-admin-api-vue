@@ -470,7 +470,7 @@ onMounted(() => {
 })
 
 // 4. Update computed properties to use participants.value
-const activeCount = computed(() => participants.value.filter(p => p.active).length)
+const activeCount = computed(() => participants.value.filter(p => p.is_active).length)
 
 const filteredParticipants = computed(() =>
     participants.value.filter(p => {
