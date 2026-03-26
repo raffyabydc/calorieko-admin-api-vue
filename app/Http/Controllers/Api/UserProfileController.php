@@ -53,19 +53,43 @@ class UserProfileController extends Controller
 
     /**
      * Admin: List all user profiles.
+     * PII (name, email) is stripped and replaced with a pseudo-anonymous display_id.
      */
     public function index(): JsonResponse
     {
-        return response()->json(UserProfile::all());
+        $profiles = UserProfile::all()->map(fn ($p) => $this->anonymize($p));
+        return response()->json($profiles);
     }
 
     /**
      * Admin: Show a single user profile.
+     * PII (name, email) is stripped and replaced with a pseudo-anonymous display_id.
      */
     public function show(string $uid): JsonResponse
     {
         $profile = UserProfile::findOrFail($uid);
-        return response()->json($profile);
+        return response()->json($this->anonymize($profile));
+    }
+
+    /**
+     * Return a privacy-safe representation of a user profile.
+     * Replaces name/email with a stable pseudo-anonymous display_id.
+     */
+    private function anonymize(UserProfile $profile): array
+    {
+        return [
+            'uid'           => $profile->uid,
+            'display_id'    => 'Participant-' . strtoupper(substr($profile->uid, 0, 5)),
+            'age'           => $profile->age,
+            'sex'           => $profile->sex,
+            'weight'        => $profile->weight,
+            'height'        => $profile->height,
+            'activityLevel' => $profile->activityLevel,
+            'goal'          => $profile->goal,
+            'streak'        => $profile->streak,
+            'level'         => $profile->level,
+            'is_active'     => $profile->is_active,
+        ];
     }
 
     /**

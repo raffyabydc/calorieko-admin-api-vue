@@ -26,7 +26,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search participants by name or email..."
+            placeholder="Search by Participant ID..."
             class="ck-input ck-input--with-icon"
           />
         </div>
@@ -66,8 +66,7 @@
           <table class="ck-table">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Email</th>
+                <th>Participant ID</th>
                 <th style="text-align: center;">Age</th>
                 <th style="text-align: center;">Sex</th>
                 <th style="text-align: center;">Weight (kg)</th>
@@ -82,8 +81,7 @@
             </thead>
             <tbody>
               <tr v-for="p in filteredParticipants" :key="p.uid">
-                <td style="font-weight: 500; color: var(--ck-gray-900);">{{ p.name || '—' }}</td>
-                <td>{{ p.email || '—' }}</td>
+                <td style="font-weight: 500; color: var(--ck-gray-900); font-family: monospace;">{{ p.display_id || '—' }}</td>
                 <td style="text-align: center;">{{ p.age || '—' }}</td>
                 <td style="text-align: center;">
                   <span v-if="p.sex" class="ck-badge" :class="p.sex === 'Male' ? 'ck-badge--info' : 'ck-badge--primary'">
@@ -135,16 +133,8 @@
           <div class="modal__body">
             <div class="detail-grid">
               <div class="detail-row">
-                <span class="detail-label">UID:</span>
-                <span class="font-mono" style="font-size: 0.75rem;">{{ selectedParticipant.uid }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Name:</span>
-                <span>{{ selectedParticipant.name || '—' }}</span>
-              </div>
-              <div class="detail-row">
-                <span class="detail-label">Email:</span>
-                <span>{{ selectedParticipant.email || '—' }}</span>
+                <span class="detail-label">Participant ID:</span>
+                <span class="font-mono" style="font-size: 0.875rem; font-weight: 600;">{{ selectedParticipant.display_id }}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Age / Sex:</span>
@@ -193,7 +183,7 @@
       <div v-if="selectedParticipantLogs" class="ck-overlay" @click.self="selectedParticipantLogs = null">
         <div class="modal animate-fade-in" style="max-width: 600px;">
           <div class="modal__header">
-            <h3>Participant Logs: {{ selectedParticipantLogs.name || '—' }}</h3>
+            <h3>Participant Logs: {{ selectedParticipantLogs.display_id || '—' }}</h3>
             <button @click="selectedParticipantLogs = null" class="modal__close"><XIcon :size="20" /></button>
           </div>
           <div class="modal__body">
@@ -275,14 +265,14 @@
           </div>
           <div class="modal__body">
             <p v-if="resetPasswordModal.status === 'success'">
-              A password reset link has been successfully sent to <strong>{{ resetPasswordModal.user?.email }}</strong>.
+              A password reset link has been successfully sent to <strong>{{ resetPasswordModal.user?.display_id }}</strong>.
             </p>
             <div v-else-if="resetPasswordModal.status === 'error'" style="padding: 1rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #ef4444;">
               <p style="font-weight: 600; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;"><XCircleIcon :size="18" /> Operation Failed</p>
               <p style="font-size: 0.875rem;">{{ resetPasswordModal.errorMessage }}</p>
             </div>
             <p v-else>
-              Are you sure you want to send a password reset link to <strong>{{ resetPasswordModal.user?.name || resetPasswordModal.user?.email }}</strong>?
+              Are you sure you want to send a password reset link to <strong>{{ resetPasswordModal.user?.display_id }}</strong>?
             </p>
           </div>
           <div class="modal__footer">
@@ -311,8 +301,8 @@
             </div>
             <template v-else>
               <p>
-                Are you sure you want to <strong>{{ deactivateModal.user?.is_active !== false ? 'deactivate' : 'reactivate' }}</strong> 
-                the account for <strong>{{ deactivateModal.user?.name || deactivateModal.user?.email }}</strong>?
+                Are you sure you want to <strong>{{ deactivateModal.user?.is_active !== false ? 'deactivate' : 'reactivate' }}</strong>
+                the account for <strong>{{ deactivateModal.user?.display_id }}</strong>?
               </p>
               <p v-if="deactivateModal.user?.is_active !== false" style="margin-top: 0.5rem; font-size: 0.8125rem; color: #ef4444;">
                 Deactivating will immediately revoke their access to the mobile application.
@@ -346,7 +336,7 @@
             </div>
             <template v-else>
               <p>
-                Are you absolutely sure you want to delete <strong>{{ deleteModal.user?.name || deleteModal.user?.email }}</strong>?
+                Are you absolutely sure you want to delete <strong>{{ deleteModal.user?.display_id }}</strong>?
               </p>
               <p style="margin-top: 0.5rem; font-size: 0.8125rem; font-weight: 500; color: #ef4444; padding: 0.75rem; background: #fef2f2; border-radius: 6px; border: 1px solid #fecaca;">
                 This action cannot be undone. All meal logs, activity logs, and personal data associated with this account will be permanently erased.
@@ -474,15 +464,9 @@ const activeCount = computed(() => participants.value.filter(p => p.is_active).l
 
 const filteredParticipants = computed(() =>
     participants.value.filter(p => {
-      // Ensure safety in case name or id is null from database
-      const pName = p.name || ''
-      const pEmail = p.email || ''
-
-      const matchSearch = pName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-          pEmail.toLowerCase().includes(searchQuery.value.toLowerCase())
-
+      const pDisplayId = (p.display_id || '').toLowerCase()
+      const matchSearch = pDisplayId.includes(searchQuery.value.toLowerCase())
       const matchGoal = goalFilter.value === 'all' || p.goal === goalFilter.value
-
       return matchSearch && matchGoal
     })
 )
