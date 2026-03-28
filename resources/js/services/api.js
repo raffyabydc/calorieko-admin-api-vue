@@ -13,19 +13,34 @@ const API_BASE = '/api/admin'
 
 /**
  * Returns the Authorization header with the admin token.
- * The token is stored in sessionStorage by the login flow.
  */
 function getAuthHeaders() {
     const token = sessionStorage.getItem('ck_token')
     return token ? { 'Authorization': `Bearer ${token}` } : {}
 }
 
+/**
+ * Unified fetch wrapper that intercepts 401 Unauthorized errors
+ * globally and forcefully logs out the user.
+ */
+async function authenticatedFetch(url, options = {}) {
+    const headers = { ...getAuthHeaders(), ...(options.headers || {}) }
+    const res = await fetch(url, { ...options, headers })
+    
+    // Auto-logout security wall
+    if (res.status === 401) {
+        sessionStorage.removeItem('ck_token')
+        sessionStorage.removeItem('ck_email')
+        sessionStorage.removeItem('ck_logged_in')
+        window.location.href = '/' // Kick user to login screen
+        throw new Error('Session expired. Please log in again.')
+    }
+    
+    return res
+}
+
 async function fetchJSON(endpoint) {
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-        headers: {
-            ...getAuthHeaders()
-        }
-    })
+    const res = await authenticatedFetch(`${API_BASE}${endpoint}`)
     if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`)
     return res.json()
 }
@@ -69,27 +84,24 @@ export async function getProfile(uid) {
 }
 
 export async function deactivateProfile(uid) {
-    const res = await fetch(`${API_BASE}/profiles/${uid}/deactivate`, {
-        method: 'PUT',
-        headers: { ...getAuthHeaders() }
+    const res = await authenticatedFetch(`${API_BASE}/profiles/${uid}/deactivate`, {
+        method: 'PUT'
     })
     if (!res.ok) throw new Error('Failed to toggle active status')
     return res.json()
 }
 
 export async function resetProfilePassword(uid) {
-    const res = await fetch(`${API_BASE}/profiles/${uid}/reset-password`, {
-        method: 'POST',
-        headers: { ...getAuthHeaders() }
+    const res = await authenticatedFetch(`${API_BASE}/profiles/${uid}/reset-password`, {
+        method: 'POST'
     })
     if (!res.ok) throw new Error('Failed to request password reset')
     return res.json()
 }
 
 export async function deleteProfile(uid) {
-    const res = await fetch(`${API_BASE}/profiles/${uid}`, {
-        method: 'DELETE',
-        headers: { ...getAuthHeaders() }
+    const res = await authenticatedFetch(`${API_BASE}/profiles/${uid}`, {
+        method: 'DELETE'
     })
     if (!res.ok) throw new Error('Failed to delete user profile')
     return res.json()
@@ -121,9 +133,9 @@ export async function getFoods() {
 }
 
 export async function createFood(data) {
-    const res = await fetch(`${API_BASE}/foods`, {
+    const res = await authenticatedFetch(`${API_BASE}/foods`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
     if (!res.ok) throw new Error('Failed to create food item')
@@ -131,9 +143,9 @@ export async function createFood(data) {
 }
 
 export async function updateFood(id, data) {
-    const res = await fetch(`${API_BASE}/foods/${id}`, {
+    const res = await authenticatedFetch(`${API_BASE}/foods/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
     if (!res.ok) throw new Error('Failed to update food item')
@@ -141,9 +153,8 @@ export async function updateFood(id, data) {
 }
 
 export async function deleteFood(id) {
-    const res = await fetch(`${API_BASE}/foods/${id}`, {
-        method: 'DELETE',
-        headers: { ...getAuthHeaders() }
+    const res = await authenticatedFetch(`${API_BASE}/foods/${id}`, {
+        method: 'DELETE'
     })
     if (!res.ok) throw new Error('Failed to delete food item')
     return res.json()
