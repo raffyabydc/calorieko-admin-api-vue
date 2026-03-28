@@ -17,80 +17,28 @@ class DashboardController extends Controller
      * GET /api/admin/dashboard/stats
      *
      * Returns aggregated KPI data for the admin overview tiles:
-     *  - activeParticipants : unique users with a DailyNutritionSummary or MealLog in the last 7 days
+     *  - activeParticipants : users with an active tracking streak (streak > 0)
      *  - mealsThisWeek      : total MealLog records created in the last 7 days
-     *  - adherence          : average (consumed / target) * 100 across active users this week
+     *  - adherence          : avg daily calories / 2000 kcal baseline × 100, capped at 100
      */
     public function getStats(): JsonResponse
     {
-        // ── Time boundaries ──
-        $sevenDaysAgo  = Carbon::now()->subDays(7);
-        $todayEpochDay = (int) floor(Carbon::now()->timestamp / 86400);
+        $sevenDaysAgo    = Carbon::now()->subDays(7);
         $weekAgoEpochDay = (int) floor($sevenDaysAgo->timestamp / 86400);
 
-        // ── 1. Active Participants ──
-        // Primary: unique UIDs that created a DailyNutritionSummary OR MealLog in the last 7 days.
-        $nutritionUids = DailyNutritionSummary::where('date_epoch_day', '>=', $weekAgoEpochDay)
-            ->pluck('uid');
+        // 1. Active Participants — users with an active tracking streak
+        $activeParticipants = UserProfile::where('streak', '>', 0)->count();
 
-        $mealLogUids = MealLog::where('created_at', '>=', $sevenDaysAgo)
-            ->pluck('uid');
-
-        $trackingUids = $nutritionUids->merge($mealLogUids)->unique();
-
-        // Fallback: if no tracking data exists yet, count users flagged as is_active
-        $activeProfileUids = UserProfile::where('is_active', true)->pluck('uid');
-        $activeUids = $trackingUids->isNotEmpty()
-            ? $trackingUids->merge($activeProfileUids)->unique()
-            : $activeProfileUids->unique();
-
-        $activeParticipants = $activeUids->count();
-
-        // ── 2. Meals This Week ──
+        // 2. Meals This Week — single COUNT query with date filter
         $mealsThisWeek = MealLog::where('created_at', '>=', $sevenDaysAgo)->count();
 
-        // ── 3. Average Caloric Target Adherence ──
-        // For each user with nutrition data, compute: (consumed / TDEE * days) * 100
+        // 3. Adherence — avg(total_calories) from the last 7 days vs 2000 kcal baseline
+        $avgCalories = DailyNutritionSummary::where('date_epoch_day', '>=', $weekAgoEpochDay)
+            ->avg('total_calories');
+
         $adherence = 0;
-        $usersWithAdherence = 0;
-
-        // Only compute adherence from users who actually have nutrition summaries
-        $uidsSummaries = DailyNutritionSummary::where('date_epoch_day', '>=', $weekAgoEpochDay)
-            ->pluck('uid')
-            ->unique();
-
-        if ($uidsSummaries->isNotEmpty()) {
-            $profiles = UserProfile::whereIn('uid', $uidsSummaries)->get()->keyBy('uid');
-
-            $weeklySummaries = DailyNutritionSummary::whereIn('uid', $uidsSummaries)
-                ->where('date_epoch_day', '>=', $weekAgoEpochDay)
-                ->get()
-                ->groupBy('uid');
-
-            foreach ($uidsSummaries as $uid) {
-                $profile = $profiles->get($uid);
-                if (!$profile) continue;
-
-                $tdee = $this->calculateTDEE($profile);
-                if ($tdee <= 0) continue;
-
-                $userSummaries = $weeklySummaries->get($uid);
-                if (!$userSummaries || $userSummaries->isEmpty()) continue;
-
-                $totalConsumed = $userSummaries->sum('total_calories');
-                $daysTracked   = $userSummaries->count();
-                $targetCalories = $tdee * $daysTracked;
-
-                if ($targetCalories > 0) {
-                    $userAdherence = ($totalConsumed / $targetCalories) * 100;
-                    $adherence += $userAdherence;
-                    $usersWithAdherence++;
-                }
-            }
-
-            $adherence = $usersWithAdherence > 0
-                ? round($adherence / $usersWithAdherence, 1)
-                : 0;
+        if ($avgCalories && $avgCalories > 0) {
+            $adherence = min(100, (int) round(($avgCalories / 2000) * 100));
         }
 
         return response()->json([
