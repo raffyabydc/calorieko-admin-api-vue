@@ -46,7 +46,7 @@ import {
   CategoryScale,
   LinearScale
 } from 'chart.js'
-import { getProfiles, getNutritionSummaries } from '../../services/api.js'
+import { getNutritionTrends } from '../../services/api.js'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -85,101 +85,34 @@ const chartOptions = {
   }
 }
 
-const calculateTDEE = (p) => {
-  if (!p.weight || !p.height || !p.age || !p.sex) return 0
-  
-  // Mifflin-St Jeor Equation
-  let bmr = (10 * p.weight) + (6.25 * p.height) - (5 * p.age)
-  bmr = p.sex === 'Male' ? bmr + 5 : bmr - 161
-  
-  // Activity Multiplier
-  let multiplier = 1.2 // Default for mostly inactive
-  switch(p.activityLevel) {
-    case 'lightly_active': multiplier = 1.375; break;
-    case 'active': multiplier = 1.55; break;
-    case 'very_active': multiplier = 1.725; break;
-  }
-  
-  return Math.round(bmr * multiplier)
-}
-
 onMounted(async () => {
   try {
-    const [profiles, summaries] = await Promise.all([
-      getProfiles(),
-      getNutritionSummaries()
-    ])
+    const data = await getNutritionTrends()
 
-    // Calculate sum of TDEE for all active participants
-    let totalSystemTDEE = 0
-    let activeUsersCount = 0
-    profiles.forEach(p => {
-        // Assume all returned profiles contribute to TDEE or only active ones
-        if (p.is_active !== false) {
-            totalSystemTDEE += calculateTDEE(p)
-            activeUsersCount++
-        }
-    })
-    
-    // Convert to per-user average
-    const averageTDEE = activeUsersCount > 0 ? totalSystemTDEE / activeUsersCount : 0
-    systemTDEE.value = Math.round(averageTDEE)
-
-    // Generate last 7 days arrays
-    const labels = []
-    const loggedData = []
-    const tdeeData = []
-
-    const today = new Date()
-    let sumWeeklyAvgIntake = 0
-
-    // Loop from 6 days ago -> today
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date(today)
-      d.setDate(d.getDate() - i)
-      const dateString = d.toISOString().substring(0, 10) // YYYY-MM-DD
-      
-      labels.push(d.toLocaleDateString('en-US', { weekday: 'short' }))
-      
-      // Calculate total calories logged on this date
-      const daysSummaries = summaries.filter(s => {
-          if (!s.date) return false;
-          return s.date.substring(0, 10) === dateString
-      })
-      
-      const dayTotalCalories = daysSummaries.reduce((sum, s) => sum + (Number(s.total_calories) || 0), 0)
-      const averageDayCalories = activeUsersCount > 0 ? dayTotalCalories / activeUsersCount : 0
-      
-      loggedData.push(Math.round(averageDayCalories))
-      tdeeData.push(Math.round(averageTDEE))
-      
-      sumWeeklyAvgIntake += averageDayCalories
-    }
-
-    avgIntake.value = sumWeeklyAvgIntake / 7
+    systemTDEE.value = data.averageTDEE
+    avgIntake.value = data.averageIntake
 
     chartData.value = {
-      labels,
+      labels: data.labels,
       datasets: [
         {
           label: 'Average Calories Logged',
-          data: loggedData,
-          backgroundColor: '#10b981', // green
+          data: data.intake,
+          backgroundColor: '#10b981',
           borderRadius: 4,
           barPercentage: 0.6,
           categoryPercentage: 0.8
         },
         {
           label: 'Average TDEE Target',
-          data: tdeeData,
-          backgroundColor: '#6366f1', // indigo
+          data: data.tdee,
+          backgroundColor: '#6366f1',
           borderRadius: 4,
           barPercentage: 0.6,
           categoryPercentage: 0.8
         }
       ]
     }
-
   } catch (err) {
     console.error('Failed to aggregate nutrition trends:', err)
   } finally {

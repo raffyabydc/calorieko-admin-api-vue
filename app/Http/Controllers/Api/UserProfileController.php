@@ -57,7 +57,8 @@ class UserProfileController extends Controller
      */
     public function index(): JsonResponse
     {
-        $profiles = UserProfile::all()->map(fn ($p) => $this->anonymize($p));
+        // Returns all profiles, anonymized, and orders active (not suspended) users first.
+        $profiles = UserProfile::orderByDesc('is_active')->get()->map(fn ($p) => $this->anonymize($p));
         return response()->json($profiles);
     }
 
@@ -89,6 +90,7 @@ class UserProfileController extends Controller
             'streak'        => $profile->streak,
             'level'         => $profile->level,
             'is_active'     => $profile->is_active,
+            'is_engaged'    => $profile->is_engaged,
         ];
     }
 
@@ -161,6 +163,12 @@ class UserProfileController extends Controller
     {
         $profile = UserProfile::findOrFail($uid);
         $email = $profile->email;
+
+        // Manually cascade deletes to prevent orphaned data from padding Dashboard KPIs
+        \App\Models\MealLog::where('uid', $uid)->delete(); // MySQL engine will automatically cascade this to MealLogItems
+        \App\Models\ActivityLog::where('uid', $uid)->delete();
+        \App\Models\DailyNutritionSummary::where('uid', $uid)->delete();
+
         $profile->delete();
 
         // Delete from Firebase DB as well

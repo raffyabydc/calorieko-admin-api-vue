@@ -207,8 +207,10 @@ const handleLogout = () => {
 }
 
 const confirmLogout = () => {
-  sessionStorage.removeItem('ck_logged_in') // Clear session
-  router.push({ name: 'Login' }) // Redirect to the actual registered Login route
+  sessionStorage.removeItem('ck_logged_in')
+  sessionStorage.removeItem('ck_token')
+  sessionStorage.removeItem('ck_email')
+  router.push({ name: 'Login' })
   showLogoutModal.value = false
 }
 
