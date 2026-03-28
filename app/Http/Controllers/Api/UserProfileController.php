@@ -56,7 +56,9 @@ class UserProfileController extends Controller
      */
     public function index(): JsonResponse
     {
-        return response()->json(UserProfile::all());
+        // Returns all profiles, including the automatically appended 'is_engaged' attribute.
+        // Orders active (not suspended) users first.
+        return response()->json(UserProfile::orderByDesc('is_active')->get());
     }
 
     /**

@@ -26,8 +26,8 @@ class DashboardController extends Controller
         $sevenDaysAgo    = Carbon::now()->subDays(7);
         $weekAgoEpochDay = (int) floor($sevenDaysAgo->timestamp / 86400);
 
-        // 1. Active Participants — users with an active tracking streak
-        $activeParticipants = UserProfile::where('streak', '>', 0)->count();
+        // 1. Engaged Participants — active accounts with a tracking streak
+        $activeParticipants = UserProfile::engaged()->count();
 
         // 2. Meals This Week — single COUNT query with date filter
         $mealsThisWeek = MealLog::where('created_at', '>=', $sevenDaysAgo)->count();
@@ -58,8 +58,8 @@ class DashboardController extends Controller
         $todayEpochDay   = (int) floor(Carbon::now()->timestamp / 86400);
         $weekAgoEpochDay = $todayEpochDay - 6; // includes today = 7 days
 
-        // Active profiles for TDEE calculation
-        $profiles = UserProfile::where('is_active', true)->get();
+        // Active profiles for TDEE calculation (exclude suspended users)
+        $profiles = UserProfile::active()->get();
         $activeUsersCount = $profiles->count();
 
         $totalTDEE = $profiles->sum(fn($p) => $this->calculateTDEE($p));
@@ -121,10 +121,12 @@ class DashboardController extends Controller
      */
     public function userConsistency(): JsonResponse
     {
-        $profiles = UserProfile::all();
+        // Only evaluate users whose accounts aren't suspended (is_active = true)
+        $profiles = UserProfile::active()->get();
 
-        $active   = $profiles->filter(fn($p) => ($p->streak ?? 0) > 0);
-        $inactive = $profiles->filter(fn($p) => ($p->streak ?? 0) === 0);
+        // Use the unified virtual attribute 'is_engaged' (is_active AND streak > 0)
+        $engaged = $profiles->filter(fn($p) => $p->is_engaged);
+        $dormant = $profiles->filter(fn($p) => !$p->is_engaged);
 
         $totalStreak = $profiles->sum('streak');
         $avgConsistency = $profiles->count() > 0
@@ -132,8 +134,8 @@ class DashboardController extends Controller
             : 0;
 
         return response()->json([
-            'activeCount'    => $active->count(),
-            'inactiveCount'  => $inactive->count(),
+            'activeCount'    => $engaged->count(),
+            'inactiveCount'  => $dormant->count(),
             'avgConsistency' => $avgConsistency,
         ]);
     }
