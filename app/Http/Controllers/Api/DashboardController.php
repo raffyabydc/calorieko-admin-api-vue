@@ -29,36 +29,45 @@ class DashboardController extends Controller
         $weekAgoEpochDay = (int) floor($sevenDaysAgo->timestamp / 86400);
 
         // ── 1. Active Participants ──
-        // Unique UIDs that created a DailyNutritionSummary OR a MealLog in the last 7 days.
+        // Primary: unique UIDs that created a DailyNutritionSummary OR MealLog in the last 7 days.
         $nutritionUids = DailyNutritionSummary::where('date_epoch_day', '>=', $weekAgoEpochDay)
             ->pluck('uid');
 
         $mealLogUids = MealLog::where('created_at', '>=', $sevenDaysAgo)
             ->pluck('uid');
 
-        $activeUids = $nutritionUids->merge($mealLogUids)->unique();
+        $trackingUids = $nutritionUids->merge($mealLogUids)->unique();
+
+        // Fallback: if no tracking data exists yet, count users flagged as is_active
+        $activeProfileUids = UserProfile::where('is_active', true)->pluck('uid');
+        $activeUids = $trackingUids->isNotEmpty()
+            ? $trackingUids->merge($activeProfileUids)->unique()
+            : $activeProfileUids->unique();
+
         $activeParticipants = $activeUids->count();
 
         // ── 2. Meals This Week ──
         $mealsThisWeek = MealLog::where('created_at', '>=', $sevenDaysAgo)->count();
 
         // ── 3. Average Caloric Target Adherence ──
-        // For each active user, compute: (sum consumed calories) / (target calories * days) * 100
-        // Target calories = TDEE derived from user profile (Mifflin-St Jeor).
+        // For each user with nutrition data, compute: (consumed / TDEE * days) * 100
         $adherence = 0;
         $usersWithAdherence = 0;
 
-        if ($activeUids->isNotEmpty()) {
-            // Get profiles for active users
-            $profiles = UserProfile::whereIn('uid', $activeUids)->get()->keyBy('uid');
+        // Only compute adherence from users who actually have nutrition summaries
+        $uidsSummaries = DailyNutritionSummary::where('date_epoch_day', '>=', $weekAgoEpochDay)
+            ->pluck('uid')
+            ->unique();
 
-            // Get weekly nutrition summaries for active users
-            $weeklySummaries = DailyNutritionSummary::whereIn('uid', $activeUids)
+        if ($uidsSummaries->isNotEmpty()) {
+            $profiles = UserProfile::whereIn('uid', $uidsSummaries)->get()->keyBy('uid');
+
+            $weeklySummaries = DailyNutritionSummary::whereIn('uid', $uidsSummaries)
                 ->where('date_epoch_day', '>=', $weekAgoEpochDay)
                 ->get()
                 ->groupBy('uid');
 
-            foreach ($activeUids as $uid) {
+            foreach ($uidsSummaries as $uid) {
                 $profile = $profiles->get($uid);
                 if (!$profile) continue;
 
