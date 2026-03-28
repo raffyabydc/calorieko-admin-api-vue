@@ -4,12 +4,28 @@
  * Fetches real data from the Laravel calorieko-api backend.
  * All requests go through the Vite proxy (configured in vite.config.js)
  * which forwards /api/* requests to the Laravel server on port 8000.
+ *
+ * All admin endpoints send the auth token from sessionStorage
+ * in the Authorization header.
  */
 
 const API_BASE = '/api/admin'
 
+/**
+ * Returns the Authorization header with the admin token.
+ * The token is stored in sessionStorage by the login flow.
+ */
+function getAuthHeaders() {
+    const token = sessionStorage.getItem('ck_token')
+    return token ? { 'Authorization': `Bearer ${token}` } : {}
+}
+
 async function fetchJSON(endpoint) {
-    const res = await fetch(`${API_BASE}${endpoint}`)
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+        headers: {
+            ...getAuthHeaders()
+        }
+    })
     if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`)
     return res.json()
 }
@@ -53,19 +69,28 @@ export async function getProfile(uid) {
 }
 
 export async function deactivateProfile(uid) {
-    const res = await fetch(`${API_BASE}/profiles/${uid}/deactivate`, { method: 'PUT' })
+    const res = await fetch(`${API_BASE}/profiles/${uid}/deactivate`, {
+        method: 'PUT',
+        headers: { ...getAuthHeaders() }
+    })
     if (!res.ok) throw new Error('Failed to toggle active status')
     return res.json()
 }
 
 export async function resetProfilePassword(uid) {
-    const res = await fetch(`${API_BASE}/profiles/${uid}/reset-password`, { method: 'POST' })
+    const res = await fetch(`${API_BASE}/profiles/${uid}/reset-password`, {
+        method: 'POST',
+        headers: { ...getAuthHeaders() }
+    })
     if (!res.ok) throw new Error('Failed to request password reset')
     return res.json()
 }
 
 export async function deleteProfile(uid) {
-    const res = await fetch(`${API_BASE}/profiles/${uid}`, { method: 'DELETE' })
+    const res = await fetch(`${API_BASE}/profiles/${uid}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeaders() }
+    })
     if (!res.ok) throw new Error('Failed to delete user profile')
     return res.json()
 }
@@ -98,7 +123,7 @@ export async function getFoods() {
 export async function createFood(data) {
     const res = await fetch(`${API_BASE}/foods`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify(data)
     })
     if (!res.ok) throw new Error('Failed to create food item')
@@ -108,7 +133,7 @@ export async function createFood(data) {
 export async function updateFood(id, data) {
     const res = await fetch(`${API_BASE}/foods/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify(data)
     })
     if (!res.ok) throw new Error('Failed to update food item')
@@ -116,7 +141,10 @@ export async function updateFood(id, data) {
 }
 
 export async function deleteFood(id) {
-    const res = await fetch(`${API_BASE}/foods/${id}`, { method: 'DELETE' })
+    const res = await fetch(`${API_BASE}/foods/${id}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeaders() }
+    })
     if (!res.ok) throw new Error('Failed to delete food item')
     return res.json()
 }
@@ -131,37 +159,21 @@ export async function getNutritionSummaries() {
     return fetchJSON('/nutrition-summaries')
 }
 
-// ── Dashboard Stats (aggregated) ──
+// ── Dashboard Stats (server-side aggregation) ──
 export async function getDashboardStats() {
-    const [profiles, mealLogs, nutritionSummaries] = await Promise.all([
-        getProfiles(),
-        getMealLogs(),
-        getNutritionSummaries()
-    ])
-
-    const now = new Date()
-    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-
-    // Total Active Participants (Users with streak > 0)
-    const activeParticipants = profiles.filter(p => p.streak > 0).length
-
-    // Total Meals Logged This Week
-    const mealsThisWeek = mealLogs.filter(m => new Date(m.created_at) >= oneWeekAgo).length
-
-    // Average Caloric Target Adherence
-    let adherence = 0
-    if (nutritionSummaries.length > 0) {
-        const totalCals = nutritionSummaries.reduce((sum, s) => sum + (s.total_calories || 0), 0)
-        const avgCals = totalCals / nutritionSummaries.length
-        adherence = Math.min(100, Math.round((avgCals / 2000) * 100)) // Using 2000 kcal as a generic baseline proxy
-    }
-
-    return {
-        activeParticipants,
-        mealsThisWeek,
-        adherence,
-        profiles,
-        mealLogs,
-        nutritionSummaries
-    }
+    return fetchJSON('/dashboard/stats')
 }
+
+// ── Analytics Endpoints (server-side chart data) ──
+export async function getNutritionTrends() {
+    return fetchJSON('/analytics/nutrition-trends')
+}
+
+export async function getTopDishes() {
+    return fetchJSON('/analytics/top-dishes')
+}
+
+export async function getUserConsistency() {
+    return fetchJSON('/analytics/user-consistency')
+}
+

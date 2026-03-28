@@ -39,7 +39,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js'
-import { getProfiles } from '../../services/api.js'
+import { getUserConsistency } from '../../services/api.js'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
@@ -68,24 +68,17 @@ const chartOptions = {
 
 onMounted(async () => {
   try {
-    const profiles = await getProfiles()
-    
-    // Calculate Active vs Inactive based on streak
-    const active = profiles.filter(p => p.streak > 0)
-    const inactive = profiles.filter(p => !p.streak || p.streak === 0)
-    
-    activeCount.value = active.length
-    inactiveCount.value = inactive.length
-    
-    // Average consistency (streak)
-    const totalStreak = profiles.reduce((sum, p) => sum + (p.streak || 0), 0)
-    avgConsistency.value = profiles.length ? Math.round(totalStreak / profiles.length) : 0
+    const data = await getUserConsistency()
+
+    activeCount.value = data.activeCount
+    inactiveCount.value = data.inactiveCount
+    avgConsistency.value = data.avgConsistency
 
     chartData.value = {
       labels: ['Active Users', 'Non-Active Users'],
       datasets: [
         {
-          data: [activeCount.value, inactiveCount.value],
+          data: [data.activeCount, data.inactiveCount],
           backgroundColor: ['#10b981', '#ef4444'],
           hoverBackgroundColor: ['#059669', '#dc2626'],
           borderWidth: 0,

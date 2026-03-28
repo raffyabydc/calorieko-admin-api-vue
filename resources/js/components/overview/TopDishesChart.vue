@@ -33,7 +33,7 @@ import {
   CategoryScale,
   LinearScale
 } from 'chart.js'
-import { getMealLogs } from '../../services/api.js'
+import { getTopDishes } from '../../services/api.js'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -65,39 +65,15 @@ const chartOptions = {
 
 onMounted(async () => {
   try {
-    const logs = await getMealLogs()
-
-    // Aggregate item frequencies
-    const itemCounts = {}
-    logs.forEach(log => {
-      // Parse items if they are stored as JSON strings occasionally, otherwise use directly
-      let items = []
-      if (typeof log.items === 'string') {
-          try { items = JSON.parse(log.items) } catch(e) {}
-      } else if (Array.isArray(log.items)) {
-          items = log.items
-      }
-
-      if (items && Array.isArray(items)) {
-        items.forEach(item => {
-            const name = item.dish_name || 'Unknown Item'
-          itemCounts[name] = (itemCounts[name] || 0) + 1
-        })
-      }
-    })
-
-    // Sort descending and slice top 5
-    const sortedItems = Object.entries(itemCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5)
+    const data = await getTopDishes()
 
     chartData.value = {
-      labels: sortedItems.map(item => item[0]),
+      labels: data.labels,
       datasets: [
         {
           label: 'Times Logged',
-          data: sortedItems.map(item => item[1]),
-          backgroundColor: '#10b981', // var(--ck-primary)
+          data: data.data,
+          backgroundColor: '#10b981',
           borderRadius: 4,
           barThickness: 24
         }

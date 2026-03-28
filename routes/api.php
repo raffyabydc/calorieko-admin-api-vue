@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\MealLogController;
 use App\Http\Controllers\Api\DailyNutritionSummaryController;
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\SystemLogController;
+use App\Http\Controllers\Api\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,17 +23,16 @@ use App\Http\Controllers\Api\SystemLogController;
 |   POST /api/sync/meal-log
 |   POST /api/sync/nutrition-summary
 |
-| Admin read endpoints (no auth for now — add admin auth later):
-|   GET /api/admin/profiles
-|   GET /api/admin/profiles/{uid}
-|   GET /api/admin/foods
-|   GET /api/admin/foods/{id}
-|   GET /api/admin/activity-logs
-|   GET /api/admin/activity-logs/{id}
-|   GET /api/admin/meal-logs
-|   GET /api/admin/meal-logs/{id}
-|   GET /api/admin/nutrition-summaries
-|   GET /api/admin/nutrition-summaries/{id}
+| Admin auth endpoints (public):
+|   POST /api/admin/login
+|   POST /api/admin/verify
+|
+| Admin endpoints (require admin.auth):
+|   GET  /api/admin/dashboard/stats
+|   GET  /api/admin/analytics/nutrition-trends
+|   GET  /api/admin/analytics/top-dishes
+|   GET  /api/admin/analytics/user-consistency
+|   ...CRUD endpoints for profiles, foods, activity-logs, etc.
 |
 */
 
@@ -48,39 +48,50 @@ Route::prefix('sync')
         Route::post('/nutrition-summary', [DailyNutritionSummaryController::class, 'sync']);
     });
 
-// ── Admin Auth Endpoints ──
+// ── Admin Auth Endpoints (public — no middleware) ──
 Route::post('/admin/login',  [AdminAuthController::class, 'login']);
 Route::post('/admin/verify', [AdminAuthController::class, 'verify']);
 
-// ── Admin Read Endpoints ──
-Route::prefix('admin')->group(function () {
-    // User Profiles
+// ── Admin Endpoints (secured with admin.auth middleware) ──
+Route::prefix('admin')
+    ->middleware('admin.auth')
+    ->group(function () {
+
+    // ── Dashboard KPI Stats ──
+    Route::get('/dashboard/stats', [DashboardController::class, 'getStats']);
+
+    // ── Analytics (chart aggregation endpoints) ──
+    Route::get('/analytics/nutrition-trends',  [DashboardController::class, 'nutritionTrends']);
+    Route::get('/analytics/top-dishes',        [DashboardController::class, 'topDishes']);
+    Route::get('/analytics/user-consistency',  [DashboardController::class, 'userConsistency']);
+
+    // ── User Profiles ──
     Route::get('/profiles',                     [UserProfileController::class, 'index']);
     Route::get('/profiles/{uid}',               [UserProfileController::class, 'show']);
     Route::put('/profiles/{uid}/deactivate',    [UserProfileController::class, 'deactivate']);
     Route::post('/profiles/{uid}/reset-password',[UserProfileController::class, 'resetPassword']);
     Route::delete('/profiles/{uid}',            [UserProfileController::class, 'destroy']);
 
-    // Food Items
+    // ── Food Items ──
     Route::get('/foods',              [FoodItemController::class, 'index']);
     Route::get('/foods/{id}',         [FoodItemController::class, 'show']);
     Route::post('/foods',             [FoodItemController::class, 'store']);
     Route::put('/foods/{id}',         [FoodItemController::class, 'update']);
     Route::delete('/foods/{id}',      [FoodItemController::class, 'destroy']);
 
-    // Activity Logs
+    // ── Activity Logs ──
     Route::get('/activity-logs',      [ActivityLogController::class, 'index']);
     Route::get('/activity-logs/{id}', [ActivityLogController::class, 'show']);
 
-    // Meal Logs (with items)
+    // ── Meal Logs (with items) ──
     Route::get('/meal-logs',          [MealLogController::class, 'index']);
     Route::get('/meal-logs/{id}',     [MealLogController::class, 'show']);
 
-    // Daily Nutrition Summaries
+    // ── Daily Nutrition Summaries ──
     Route::get('/nutrition-summaries',      [DailyNutritionSummaryController::class, 'index']);
     Route::get('/nutrition-summaries/{id}', [DailyNutritionSummaryController::class, 'show']);
 
-    // System Logs
+    // ── System Logs ──
     Route::get('/system-logs',              [SystemLogController::class, 'index']);
 });
 
@@ -88,3 +99,4 @@ Route::prefix('admin')->group(function () {
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'app' => 'CalorieKo API']);
 });
+
