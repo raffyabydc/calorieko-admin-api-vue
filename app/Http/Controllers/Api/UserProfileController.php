@@ -139,6 +139,12 @@ class UserProfileController extends Controller
     {
         $profile = UserProfile::findOrFail($uid);
         $email = $profile->email;
+
+        // Manually cascade deletes to prevent orphaned data from padding Dashboard KPIs
+        \App\Models\MealLog::where('uid', $uid)->delete(); // MySQL engine will automatically cascade this to MealLogItems
+        \App\Models\ActivityLog::where('uid', $uid)->delete();
+        \App\Models\DailyNutritionSummary::where('uid', $uid)->delete();
+
         $profile->delete();
 
         // Delete from Firebase DB as well
