@@ -99,8 +99,9 @@
                   <span v-if="p.goal" class="ck-badge ck-badge--success">{{ p.goal }}</span>
                   <span v-else>—</span>
                 </td>
-                <td style="text-align: center; font-weight: 600; color: #f59e0b;">
-                  {{ p.streak || 0 }} Days
+                <td style="text-align: center;">
+                  <span v-if="p.is_engaged" class="ck-badge ck-badge--success">{{ p.streak || 0 }} Days</span>
+                  <span v-else class="ck-badge ck-badge--warning">Dormant</span>
                 </td>
                 <td style="text-align: center;">
                   <span class="ck-badge ck-badge--outline ck-badge--error">No</span>
@@ -470,7 +471,7 @@ onMounted(() => {
 })
 
 // 4. Update computed properties to use participants.value
-const activeCount = computed(() => participants.value.filter(p => p.active).length)
+const activeCount = computed(() => participants.value.filter(p => p.is_engaged).length)
 
 const filteredParticipants = computed(() =>
     participants.value.filter(p => {
