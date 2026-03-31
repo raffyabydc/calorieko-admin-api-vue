@@ -26,6 +26,12 @@ class ActivityLogController extends Controller
             'fats'             => 'nullable|integer',
             'sodium'           => 'nullable|integer',
             'timestamp'        => 'required|integer',
+            'distanceKm'       => 'nullable|numeric',
+            'pace'             => 'nullable|numeric',
+            'movingTimeSeconds'=> 'nullable|integer',
+            'mapType'          => 'nullable|string',
+            'notes'            => 'nullable|string',
+            'activityTag'      => 'nullable|string',
         ]);
 
         // Ensure the authenticated user matches the data uid
@@ -33,7 +39,10 @@ class ActivityLogController extends Controller
             return response()->json(['error' => 'UID mismatch'], 403);
         }
 
-        $log = ActivityLog::create($data);
+        $log = ActivityLog::updateOrCreate(
+            ['uid' => $data['uid'], 'timestamp' => $data['timestamp']],
+            $data
+        );
 
         return response()->json($log, 201);
     }
@@ -61,7 +70,10 @@ class ActivityLogController extends Controller
             if ($request->firebaseUid !== $entry['uid']) {
                 continue; // Skip entries that don't match the authenticated user
             }
-            $created[] = ActivityLog::create($entry);
+            $created[] = ActivityLog::updateOrCreate(
+                ['uid' => $entry['uid'], 'timestamp' => $entry['timestamp']],
+                $entry
+            );
         }
 
         return response()->json($created, 201);

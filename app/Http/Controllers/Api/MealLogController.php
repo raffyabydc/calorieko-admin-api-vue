@@ -49,13 +49,17 @@ class MealLogController extends Controller
             return response()->json(['error' => 'UID mismatch'], 403);
         }
 
-        // Create the parent meal log
-        $mealLog = MealLog::create([
-            'uid'       => $data['uid'],
-            'meal_type' => $data['meal_type'],
-            'timestamp' => $data['timestamp'],
-            'notes'     => $data['notes'] ?? null,
-        ]);
+        // Create or update the parent meal log
+        $mealLog = MealLog::updateOrCreate(
+            ['uid' => $data['uid'], 'timestamp' => $data['timestamp']],
+            [
+                'meal_type' => $data['meal_type'],
+                'notes'     => $data['notes'] ?? null,
+            ]
+        );
+
+        // Clear existing items if this is an update to prevent duplication
+        $mealLog->items()->delete();
 
         // Create each child item
         foreach ($data['items'] as $itemData) {

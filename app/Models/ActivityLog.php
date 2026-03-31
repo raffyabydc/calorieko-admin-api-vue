@@ -21,6 +21,12 @@ class ActivityLog extends Model
         'fats',
         'sodium',
         'timestamp',
+        'distanceKm',
+        'pace',
+        'movingTimeSeconds',
+        'mapType',
+        'notes',
+        'activityTag',
     ];
 
     protected $casts = [
@@ -30,5 +36,8 @@ class ActivityLog extends Model
         'fats'      => 'integer',
         'sodium'    => 'integer',
         'timestamp' => 'integer',
+        'distanceKm'=> 'double',
+        'pace'      => 'double',
+        'movingTimeSeconds' => 'integer',
     ];
 }
