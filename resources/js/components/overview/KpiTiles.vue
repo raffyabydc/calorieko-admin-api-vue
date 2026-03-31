@@ -59,7 +59,7 @@ onMounted(async () => {
 
     tiles.value = [
       {
-        title: 'Total Active Participants',
+        title: 'Users Currently Tracking',
         value: stats.activeParticipants,
         icon: Users,
         trend: 'Users with tracking streak',
