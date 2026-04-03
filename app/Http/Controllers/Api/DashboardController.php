@@ -26,19 +26,13 @@ class DashboardController extends Controller
         $sevenDaysAgo    = Carbon::now()->subDays(7);
         $weekAgoEpochDay = (int) floor($sevenDaysAgo->timestamp / 86400);
 
-        // 1. Active Exercisers — unique users who logged a workout in the actual past 7 days
-        // Convert 7 days ago to epoch milliseconds to match the mobile app's timestamp format
-        $sevenDaysAgoMillis = $sevenDaysAgo->timestamp * 1000;
+        // 1. Engaged Participants — active accounts with a tracking streak
+        $activeParticipants = UserProfile::engaged()->count();
 
-        $activeParticipants = \App\Models\ActivityLog::where('type', 'workout')
-            ->where('timestamp', '>=', $sevenDaysAgoMillis)
-            ->distinct('uid')
-            ->count('uid');
-
-        // 2. Meals This Week
+        // 2. Meals This Week — single COUNT query with date filter
         $mealsThisWeek = MealLog::where('created_at', '>=', $sevenDaysAgo)->count();
 
-        // 3. Adherence
+        // 3. Adherence — avg(total_calories) from the last 7 days vs 2000 kcal baseline
         $avgCalories = DailyNutritionSummary::where('date_epoch_day', '>=', $weekAgoEpochDay)
             ->avg('total_calories');
 

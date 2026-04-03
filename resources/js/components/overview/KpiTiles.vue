@@ -30,13 +30,13 @@ import { getDashboardStats } from '../../services/api.js'
 const loading = ref(true)
 
 const tiles = ref([
-    {
-        title: 'Active Exercisers',
-        value: stats.activeParticipants,
-        icon: Users,
-        trend: 'Logged a workout in the past 7 days',
-        color: '#10b981'
-    },
+  {
+    title: 'Total Active Participants',
+    value: 0,
+    icon: Users,
+    trend: 'Loading...',
+    color: '#10b981'
+  },
   {
     title: 'Total Meals Logged This Week',
     value: 0,
