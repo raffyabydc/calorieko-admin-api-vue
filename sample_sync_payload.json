@@ -1,0 +1,141 @@
+{
+  "uid": "12345_FIREBASE_UID_abcde",
+  "last_sync_timestamp": 1712128000,
+  "profile": {
+    "name": "Jane Doe",
+    "email": "jane@example.com",
+    "age": 28,
+    "weight": 65.5,
+    "height": 170.0,
+    "sex": "Female",
+    "activityLevel": "Moderately Active",
+    "goal": "Lose Weight",
+    "streak": 5,
+    "level": 2
+  },
+  "meals": [
+    {
+      "uid": "12345_FIREBASE_UID_abcde",
+      "meal_type": "Breakfast",
+      "timestamp": 1712129000,
+      "notes": "Felt quite full after this meal.",
+      "items": [
+        {
+          "food_id": 101,
+          "dish_name": "Oatmeal with Berries",
+          "weight_grams": 150,
+          "calories": 250,
+          "protein": 10,
+          "carbs": 45,
+          "fat": 4,
+          "fiber": 6,
+          "sugar": 12,
+          "saturated_fat": 1.2,
+          "polyunsaturated_fat": 0.8,
+          "monounsaturated_fat": 1.0,
+          "trans_fat": 0,
+          "cholesterol": 5,
+          "sodium": 150,
+          "potassium": 200,
+          "vitamin_a": 10,
+          "vitamin_c": 5,
+          "calcium": 80,
+          "iron": 3
+        },
+        {
+          "food_id": 205,
+          "dish_name": "Banana",
+          "weight_grams": 120,
+          "calories": 105,
+          "protein": 1.3,
+          "carbs": 27,
+          "fat": 0.4,
+          "fiber": 3.1,
+          "sugar": 14
+        }
+      ]
+    },
+    {
+      "uid": "12345_FIREBASE_UID_abcde",
+      "meal_type": "Lunch",
+      "timestamp": 1712143400,
+      "notes": null,
+      "items": [
+        {
+          "food_id": 310,
+          "dish_name": "Grilled Chicken Salad",
+          "weight_grams": 350,
+          "calories": 420,
+          "protein": 38,
+          "carbs": 15,
+          "fat": 22,
+          "fiber": 5,
+          "sugar": 4,
+          "sodium": 680
+        }
+      ]
+    }
+  ],
+  "activities": [
+    {
+      "uid": "12345_FIREBASE_UID_abcde",
+      "type": "workout",
+      "name": "Morning Run",
+      "timeString": "07:00 AM",
+      "weightOrDuration": "30 mins",
+      "calories": 300,
+      "protein": 0,
+      "carbs": 0,
+      "fats": 0,
+      "sodium": 0,
+      "timestamp": 1712127600,
+      "distanceKm": 5.2,
+      "pace": 5.8,
+      "movingTimeSeconds": 1800,
+      "mapType": "outdoor",
+      "notes": "Easy pace recovery run",
+      "activityTag": "Cardio"
+    },
+    {
+      "uid": "12345_FIREBASE_UID_abcde",
+      "type": "workout",
+      "name": "Evening Weights",
+      "timeString": "06:30 PM",
+      "weightOrDuration": "45 mins",
+      "calories": 220,
+      "protein": 0,
+      "carbs": 0,
+      "fats": 0,
+      "sodium": 0,
+      "timestamp": 1712169000,
+      "activityTag": "Strength"
+    }
+  ],
+  "nutrition_summaries": [
+    {
+      "uid": "12345_FIREBASE_UID_abcde",
+      "date_epoch_day": 19815,
+      "total_calories": 1850,
+      "total_protein": 120,
+      "total_carbs": 180,
+      "total_fiber": 22,
+      "total_sugar": 45,
+      "total_fat": 60,
+      "total_saturated_fat": 15,
+      "total_polyunsaturated_fat": 8,
+      "total_monounsaturated_fat": 20,
+      "total_trans_fat": 0.5,
+      "total_cholesterol": 180,
+      "total_sodium": 1900,
+      "total_potassium": 2800,
+      "total_vitamin_a": 45,
+      "total_vitamin_c": 60,
+      "total_calcium": 600,
+      "total_iron": 12,
+      "breakfast_calories": 355,
+      "lunch_calories": 420,
+      "dinner_calories": 875,
+      "snacks_calories": 200
+    }
+  ]
+}

@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\DashboardController;
 |--------------------------------------------------------------------------
 |
 | Mobile sync endpoints (require Firebase auth):
+|   POST /api/sync/full              ← Master atomic sync (all data in one transaction)
 |   POST /api/sync/profile
 |   POST /api/sync/food
 |   POST /api/sync/activity-log
@@ -40,6 +41,9 @@ use App\Http\Controllers\Api\DashboardController;
 Route::prefix('sync')
     ->middleware('firebase.auth')
     ->group(function () {
+        // Master Atomic Sync Route
+        Route::post('/full',              [\App\Http\Controllers\Api\MobileSyncController::class, 'syncFull']);
+        
         Route::post('/profile',           [UserProfileController::class, 'sync']);
         Route::post('/food',              [FoodItemController::class, 'sync']);
         Route::post('/activity-log',      [ActivityLogController::class, 'sync']);
