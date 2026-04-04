@@ -23,10 +23,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { Users, Target, Activity } from 'lucide-vue-next'
 import { getDashboardStats } from '../../services/api.js'
 
+const props = defineProps({ refreshKey: { type: Number, default: 0 } })
 const loading = ref(true)
 
 const tiles = ref([
@@ -53,7 +54,8 @@ const tiles = ref([
   }
 ])
 
-onMounted(async () => {
+async function fetchData() {
+  loading.value = true
   try {
     const stats = await getDashboardStats()
 
@@ -86,7 +88,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(fetchData)
+watch(() => props.refreshKey, fetchData)
 </script>
 
 <style scoped>

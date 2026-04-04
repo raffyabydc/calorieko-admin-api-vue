@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { Bar } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -37,6 +37,7 @@ import { getTopDishes } from '../../services/api.js'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
+const props = defineProps({ refreshKey: { type: Number, default: 0 } })
 const loading = ref(true)
 const chartData = ref({ labels: [], datasets: [] })
 
@@ -63,7 +64,8 @@ const chartOptions = {
   }
 }
 
-onMounted(async () => {
+async function fetchData() {
+  loading.value = true
   try {
     const data = await getTopDishes()
 
@@ -84,7 +86,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(fetchData)
+watch(() => props.refreshKey, fetchData)
 </script>
 
 <style scoped>

@@ -31,7 +31,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { Doughnut } from 'vue-chartjs'
 import {
   Chart as ChartJS,
@@ -43,6 +43,7 @@ import { getUserConsistency } from '../../services/api.js'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
+const props = defineProps({ refreshKey: { type: Number, default: 0 } })
 const loading = ref(true)
 const activeCount = ref(0)
 const inactiveCount = ref(0)
@@ -66,7 +67,8 @@ const chartOptions = {
   cutout: '70%'
 }
 
-onMounted(async () => {
+async function fetchData() {
+  loading.value = true
   try {
     const data = await getUserConsistency()
 
@@ -91,7 +93,10 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+onMounted(fetchData)
+watch(() => props.refreshKey, fetchData)
 </script>
 
 <style scoped>
