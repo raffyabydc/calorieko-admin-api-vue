@@ -116,3 +116,5 @@ Route::get('/health', function () {
     ]);
 });
 
+
+Route::middleware('firebase.auth')->post('/sync/full', [App\Http\Controllers\Api\MobileSyncController::class, 'syncFull']);
