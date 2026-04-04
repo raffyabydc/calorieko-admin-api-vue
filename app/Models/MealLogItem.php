@@ -5,7 +5,9 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+
 class MealLogItem extends Model
+
 {
     protected $table = 'meal_log_item_table';
     protected $primaryKey = 'meal_log_item_id';

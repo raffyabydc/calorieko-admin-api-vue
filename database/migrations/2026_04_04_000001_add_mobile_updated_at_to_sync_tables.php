@@ -16,11 +16,11 @@ return new class extends Migration
     public function up(): void
     {
         $tables = [
-            'users',
-            'meal_logs',
-            'meal_log_items',
-            'activity_logs',
-            'daily_nutrition_summaries',
+            'user_profile',
+            'meal_log_table',
+            'meal_log_item_table',
+            'activity_log_table',
+            'daily_nutrition_summary_table',
         ];
 
         foreach ($tables as $table) {
@@ -36,11 +36,11 @@ return new class extends Migration
     public function down(): void
     {
         $tables = [
-            'users',
-            'meal_logs',
-            'meal_log_items',
-            'activity_logs',
-            'daily_nutrition_summaries',
+            'user_profile',
+            'meal_log_table',
+            'meal_log_item_table',
+            'activity_log_table',
+            'daily_nutrition_summary_table',
         ];
 
         foreach ($tables as $table) {
