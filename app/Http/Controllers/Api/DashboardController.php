@@ -26,11 +26,19 @@ class DashboardController extends Controller
         $sevenDaysAgo    = Carbon::now()->subDays(7);
         $weekAgoEpochDay = (int) floor($sevenDaysAgo->timestamp / 86400);
 
-        // 1. Engaged Participants — active accounts with a tracking streak
-        $activeParticipants = UserProfile::engaged()->count();
+        // 1. Engaged Participants — users who have logged ANY meal or activity in the last 7 days
+        //    (streak is not set by the mobile app, so we check actual data instead)
+        $sevenDaysAgoMs  = (int) ($sevenDaysAgo->timestamp * 1000); // epoch millis for mobile timestamp
 
-        // 2. Meals This Week — single COUNT query with date filter
-        $mealsThisWeek = MealLog::where('created_at', '>=', $sevenDaysAgo)->count();
+        $mealUids = MealLog::where('timestamp', '>=', $sevenDaysAgoMs)
+            ->distinct()->pluck('uid');
+        $activityUids = DB::table('activity_log_table')
+            ->where('timestamp', '>=', $sevenDaysAgoMs)
+            ->distinct()->pluck('uid');
+        $activeParticipants = $mealUids->merge($activityUids)->unique()->count();
+
+        // 2. Meals This Week — count by mobile epoch-millis timestamp (not Laravel created_at)
+        $mealsThisWeek = MealLog::where('timestamp', '>=', $sevenDaysAgoMs)->count();
 
         // 3. Adherence — avg(total_calories) from the last 7 days vs 2000 kcal baseline
         $avgCalories = DailyNutritionSummary::where('date_epoch_day', '>=', $weekAgoEpochDay)
@@ -124,13 +132,29 @@ class DashboardController extends Controller
         // Only evaluate users whose accounts aren't suspended (is_active = true)
         $profiles = UserProfile::active()->get();
 
-        // Use the unified virtual attribute 'is_engaged' (is_active AND streak > 0)
-        $engaged = $profiles->filter(fn($p) => $p->is_engaged);
-        $dormant = $profiles->filter(fn($p) => !$p->is_engaged);
+        // Use actual recent logging activity (last 7 days) instead of streak
+        $sevenDaysAgoMs = (int) (Carbon::now()->subDays(7)->timestamp * 1000);
 
-        $totalStreak = $profiles->sum('streak');
-        $avgConsistency = $profiles->count() > 0
-            ? round($totalStreak / $profiles->count())
+        $recentUids = DB::table('meal_log_table')
+            ->where('timestamp', '>=', $sevenDaysAgoMs)
+            ->select('uid')
+            ->union(
+                DB::table('activity_log_table')
+                    ->where('timestamp', '>=', $sevenDaysAgoMs)
+                    ->select('uid')
+            )->pluck('uid')->unique();
+
+        $engaged = $profiles->filter(fn($p) => $recentUids->contains($p->uid));
+        $dormant = $profiles->filter(fn($p) => !$recentUids->contains($p->uid));
+
+        // Avg consistency = average number of days (out of 7) each active user has logged nutrition data
+        $weekAgoEpochDay = (int) floor(Carbon::now()->subDays(7)->timestamp / 86400);
+        $daysPerUser = DailyNutritionSummary::where('date_epoch_day', '>=', $weekAgoEpochDay)
+            ->select('uid', DB::raw('COUNT(DISTINCT date_epoch_day) as days_logged'))
+            ->groupBy('uid')
+            ->pluck('days_logged');
+        $avgConsistency = $daysPerUser->count() > 0
+            ? round($daysPerUser->avg())
             : 0;
 
         return response()->json([
