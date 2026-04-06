@@ -155,7 +155,7 @@ class MobileSyncController extends Controller
                         'updated_at'       => now(),
                     ]);
                     $stats['profile_updated'] = true;
-                } elseif ($mobileUpdatedAt > ($existing->mobile_updated_at ?? 0)) {
+                } elseif ($mobileUpdatedAt >= ($existing->mobile_updated_at ?? 0)) {
                     // Mobile is newer — update
                     DB::table('user_profile')->where('uid', $uid)->update([
                         'name'             => $profileData['name'] ?? $existing->name,
@@ -210,7 +210,7 @@ class MobileSyncController extends Controller
                         'updated_at'        => now(),
                     ], 'meal_log_id');
                     $stats['meals_inserted']++;
-                } elseif ($mobileUpdatedAt > ($existing->mobile_updated_at ?? 0)) {
+                } elseif ($mobileUpdatedAt >= ($existing->mobile_updated_at ?? 0)) {
                     // Mobile is newer — update
                     $mealLogId = $existing->meal_log_id;
                     DB::table('meal_log_table')->where('meal_log_id', $mealLogId)->update([
@@ -267,7 +267,7 @@ class MobileSyncController extends Controller
                             $itemData['created_at'] = now();
                             $itemData['updated_at'] = now();
                             DB::table('meal_log_item_table')->insert($itemData);
-                        } elseif ($itemMobileUpdatedAt > ($existingItem->mobile_updated_at ?? 0)) {
+                        } elseif ($itemMobileUpdatedAt >= ($existingItem->mobile_updated_at ?? 0)) {
                             $itemData['updated_at'] = now();
                             DB::table('meal_log_item_table')
                                 ->where('meal_log_item_id', $existingItem->meal_log_item_id)
@@ -321,7 +321,7 @@ class MobileSyncController extends Controller
                     $activityData['updated_at'] = now();
                     DB::table('activity_log_table')->insert($activityData);
                     $stats['activities_inserted']++;
-                } elseif ($mobileUpdatedAt > ($existing->mobile_updated_at ?? 0)) {
+                } elseif ($mobileUpdatedAt >= ($existing->mobile_updated_at ?? 0)) {
                     $activityData['updated_at'] = now();
                     DB::table('activity_log_table')->where('id', $existing->id)->update($activityData);
                     $stats['activities_updated']++;
@@ -379,7 +379,7 @@ class MobileSyncController extends Controller
                     $summaryData['updated_at'] = now();
                     DB::table('daily_nutrition_summary_table')->insert($summaryData);
                     $stats['summaries_inserted']++;
-                } elseif ($mobileUpdatedAt > ($existing->mobile_updated_at ?? 0)) {
+                } elseif ($mobileUpdatedAt >= ($existing->mobile_updated_at ?? 0)) {
                     $summaryData['updated_at'] = now();
                     DB::table('daily_nutrition_summary_table')->where('id', $existing->id)->update($summaryData);
                     $stats['summaries_updated']++;
