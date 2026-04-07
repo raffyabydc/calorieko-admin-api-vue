@@ -75,22 +75,47 @@ class UserProfileController extends Controller
     /**
      * Return a privacy-safe representation of a user profile.
      * Replaces name/email with a stable pseudo-anonymous display_id.
+     * Includes computed `has_recent_activity` and `days_active_last_7` fields
+     * so the frontend can render Active/Dormant badges consistently with KPI tiles.
      */
     private function anonymize(UserProfile $profile): array
     {
+        $sevenDaysAgoMs = (int) (now()->subDays(7)->timestamp * 1000);
+
+        // Check if this user has ANY meal or activity logged in the last 7 days
+        $hasMeals = \App\Models\MealLog::where('uid', $profile->uid)
+            ->where('timestamp', '>=', $sevenDaysAgoMs)
+            ->exists();
+        $hasActivities = \Illuminate\Support\Facades\DB::table('activity_log_table')
+            ->where('uid', $profile->uid)
+            ->where('timestamp', '>=', $sevenDaysAgoMs)
+            ->exists();
+        $hasRecentActivity = $hasMeals || $hasActivities;
+
+        // Count distinct days with nutrition summaries in the last 7 days
+        $weekAgoEpochDay = (int) floor(now()->subDays(7)->timestamp / 86400);
+        $daysActiveCount = \App\Models\DailyNutritionSummary::where('uid', $profile->uid)
+            ->where('date_epoch_day', '>=', $weekAgoEpochDay)
+            ->distinct('date_epoch_day')
+            ->count('date_epoch_day');
+
         return [
-            'uid'           => $profile->uid,
-            'display_id'    => 'Participant-' . strtoupper(substr($profile->uid, 0, 5)),
-            'age'           => $profile->age,
-            'sex'           => $profile->sex,
-            'weight'        => $profile->weight,
-            'height'        => $profile->height,
-            'activityLevel' => $profile->activityLevel,
-            'goal'          => $profile->goal,
-            'streak'        => $profile->streak,
-            'level'         => $profile->level,
-            'is_active'     => $profile->is_active,
-            'is_engaged'    => $profile->is_engaged,
+            'uid'                  => $profile->uid,
+            'display_id'           => 'Participant-' . strtoupper(substr($profile->uid, 0, 5)),
+            'age'                  => $profile->age,
+            'sex'                  => $profile->sex,
+            'weight'               => $profile->weight,
+            'height'               => $profile->height,
+            'activityLevel'        => $profile->activityLevel,
+            'goal'                 => $profile->goal,
+            'streak'               => $profile->streak,
+            'level'                => $profile->level,
+            'is_active'            => $profile->is_active,
+            'is_engaged'           => $hasRecentActivity && $profile->is_active,
+            'has_recent_activity'  => $hasRecentActivity,
+            'days_active_last_7'   => $daysActiveCount,
+            'mobile_updated_at'    => $profile->mobile_updated_at ?? null,
+            'updated_at'           => $profile->updated_at?->toISOString(),
         ];
     }
 

@@ -30,11 +30,11 @@
             class="ck-input ck-input--with-icon"
           />
         </div>
-        <select v-model="goalFilter" class="ck-select" style="width: auto; min-width: 120px;">
+        <select v-model="goalFilter" class="ck-select" style="width: auto; min-width: 160px;">
           <option value="all">All Goals</option>
           <option value="weight_loss">Weight Loss</option>
-          <option value="maintain_weight">Maintain</option>
-          <option value="gain_muscle">Weight Gain</option>
+          <option value="gain_muscle">Gain Muscle</option>
+          <option value="general">General Wellness</option>
         </select>
       </div>
 
@@ -98,7 +98,7 @@
                   <span v-else>—</span>
                 </td>
                 <td style="text-align: center;">
-                  <span v-if="p.is_engaged" class="ck-badge ck-badge--success">{{ p.streak || 0 }} Days</span>
+                  <span v-if="isUserActive(p)" class="ck-badge ck-badge--success">Active</span>
                   <span v-else class="ck-badge ck-badge--warning">Dormant</span>
                 </td>
                 <td style="text-align: center;">
@@ -126,12 +126,12 @@
     <!-- Detail Modal -->
     <Teleport to="body">
       <div v-if="selectedParticipant" class="ck-overlay" @click.self="selectedParticipant = null">
-        <div class="modal animate-fade-in">
+        <div class="modal modal--detail animate-fade-in">
           <div class="modal__header">
             <h3>Participant Details</h3>
             <button @click="selectedParticipant = null" class="modal__close"><XIcon :size="20" /></button>
           </div>
-          <div class="modal__body">
+          <div class="modal__body modal__body--scrollable">
             <div class="detail-grid">
               <div class="detail-row">
                 <span class="detail-label">Participant ID:</span>
@@ -159,21 +159,33 @@
               </div>
               <div class="detail-row">
                 <span class="detail-label">Activity Level:</span>
-                <span>{{ selectedParticipant.activityLevel || '—' }}</span>
+                <span>{{ formatActivityLevel(selectedParticipant.activityLevel) }}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Goal:</span>
-                <span>{{ selectedParticipant.goal || '—' }}</span>
+                <span>{{ formatGoal(selectedParticipant.goal) }}</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-label">Status:</span>
+                <span v-if="isUserActive(selectedParticipant)" style="font-weight: 600; color: #10b981;">Active</span>
+                <span v-else style="font-weight: 600; color: #f59e0b;">Dormant</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Consistency:</span>
-                <span style="font-weight: 600; color: #f59e0b;">{{ selectedParticipant.streak || 0 }} Days</span>
+                <span style="font-weight: 600; color: #f59e0b;">{{ selectedParticipant.days_active_last_7 || 0 }} Days (last 7d)</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Scale Linked:</span>
                 <span style="font-weight: 600; color: var(--ck-red-500);">No</span>
               </div>
             </div>
+          </div>
+          <div class="modal__footer">
+            <button class="btn btn--secondary" @click="showLogs(selectedParticipant); selectedParticipant = null">View Local Logs</button>
+            <button class="btn" :class="selectedParticipant.is_active !== false ? 'btn--danger' : 'btn--primary'" 
+              @click="deactivateUser(selectedParticipant); selectedParticipant = null">
+              {{ selectedParticipant.is_active !== false ? 'Deactivate' : 'Reactivate' }}
+            </button>
           </div>
         </div>
       </div>
@@ -461,7 +473,7 @@ onMounted(() => {
 })
 
 // 4. Update computed properties to use participants.value
-const activeCount = computed(() => participants.value.filter(p => p.is_active).length)
+const activeCount = computed(() => participants.value.filter(p => isUserActive(p)).length)
 
 const filteredParticipants = computed(() =>
     participants.value.filter(p => {
@@ -607,6 +619,61 @@ const calculateTDEE = (p) => {
   
   return Math.round(bmr * multiplier)
 }
+
+/**
+ * Determines if a user is "Active" based on time-based data presence.
+ * A user is active if:
+ *   - Their account is not suspended (is_active !== false), AND
+ *   - They have synced/logged data within the last 7 days
+ *     (checked via `has_recent_activity` from the API, OR
+ *      `mobile_updated_at` / `updated_at` within 7 days)
+ */
+const isUserActive = (p) => {
+  if (p.is_active === false) return false
+  
+  // If the API provides a computed flag, use it directly
+  if (p.has_recent_activity !== undefined) return p.has_recent_activity
+  
+  // Fallback: check mobile_updated_at timestamp (epoch millis)
+  if (p.mobile_updated_at) {
+    const sevenDaysAgoMs = Date.now() - (7 * 24 * 60 * 60 * 1000)
+    return p.mobile_updated_at >= sevenDaysAgoMs
+  }
+  
+  // Fallback: check updated_at (Laravel carbon date string)
+  if (p.updated_at) {
+    const sevenDaysAgo = new Date(Date.now() - (7 * 24 * 60 * 60 * 1000))
+    return new Date(p.updated_at) >= sevenDaysAgo
+  }
+  
+  return false
+}
+
+/**
+ * Format the raw goal ID into a human-readable label.
+ */
+const formatGoal = (goal) => {
+  const map = {
+    'gain_muscle': 'Gain Muscle',
+    'weight_loss': 'Weight Loss',
+    'general': 'General Health & Wellness',
+    'maintain_weight': 'Maintain Weight',
+  }
+  return map[goal] || goal || '—'
+}
+
+/**
+ * Format the raw activityLevel ID into a human-readable label.
+ */
+const formatActivityLevel = (level) => {
+  const map = {
+    'not_very_active': 'Not Very Active',
+    'lightly_active': 'Lightly Active',
+    'active': 'Active',
+    'very_active': 'Very Active',
+  }
+  return map[level] || level || '—'
+}
 </script>
 
 <style scoped>
@@ -643,16 +710,27 @@ const calculateTDEE = (p) => {
   background: white; border-radius: var(--ck-radius-xl); width: 100%; max-width: 500px;
   box-shadow: var(--ck-shadow-2xl); overflow: hidden;
 }
+.modal--detail {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
 .modal__header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 1.5rem; border-bottom: 1px solid var(--ck-gray-200);
+  flex-shrink: 0;
 }
 .modal__header h3 { font-size: 1.125rem; font-weight: 600; color: var(--ck-gray-900); }
 .modal__close { color: var(--ck-gray-400); padding: 0.25rem; border-radius: var(--ck-radius-md); }
 .modal__close:hover { background: var(--ck-gray-100); color: var(--ck-gray-700); }
 .modal__body { padding: 1.5rem; }
+.modal__body--scrollable {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
 
-.detail-grid { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+.detail-grid { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 0; }
 .detail-row { display: flex; gap: 1rem; font-size: 0.875rem; }
 .detail-label { color: var(--ck-gray-500); width: 120px; flex-shrink: 0; }
 
