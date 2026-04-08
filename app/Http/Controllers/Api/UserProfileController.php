@@ -92,12 +92,29 @@ class UserProfileController extends Controller
             ->exists();
         $hasRecentActivity = $hasMeals || $hasActivities;
 
-        // Count distinct days with nutrition summaries in the last 7 days
+        // Count distinct days with ANY interaction (meals OR activities) in the last 7 days.
+        // Uses a UNION query to merge dates from both tables, then counts unique dates.
         $weekAgoEpochDay = (int) floor(now()->subDays(7)->timestamp / 86400);
-        $daysActiveCount = \App\Models\DailyNutritionSummary::where('uid', $profile->uid)
+        $todayEpochDay   = (int) floor(now()->timestamp / 86400);
+
+        // Nutrition summary dates (stored as epoch_day integers)
+        $nutritionDates = \App\Models\DailyNutritionSummary::where('uid', $profile->uid)
             ->where('date_epoch_day', '>=', $weekAgoEpochDay)
-            ->distinct('date_epoch_day')
-            ->count('date_epoch_day');
+            ->pluck('date_epoch_day')
+            ->map(fn($d) => (string) $d);
+
+        // Activity log dates (stored as epoch_millis → convert to epoch_day)
+        $activityDates = \Illuminate\Support\Facades\DB::table('activity_log_table')
+            ->where('uid', $profile->uid)
+            ->where('timestamp', '>=', $sevenDaysAgoMs)
+            ->pluck('timestamp')
+            ->map(fn($ts) => (string) ((int) floor($ts / 86400000)));
+
+        // Merge both collections, keep only unique epoch_days
+        $daysActiveCount = $nutritionDates
+            ->merge($activityDates)
+            ->unique()
+            ->count();
 
         return [
             'uid'                  => $profile->uid,

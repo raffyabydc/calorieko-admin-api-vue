@@ -713,12 +713,16 @@ const formatActivityLevel = (level) => {
 .modal--detail {
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
+  max-height: calc(100vh - 80px);
 }
 .modal__header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 1.5rem; border-bottom: 1px solid var(--ck-gray-200);
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
 }
 .modal__header h3 { font-size: 1.125rem; font-weight: 600; color: var(--ck-gray-900); }
 .modal__close { color: var(--ck-gray-400); padding: 0.25rem; border-radius: var(--ck-radius-md); }
@@ -804,6 +808,7 @@ const formatActivityLevel = (level) => {
 }
 .modal__footer {
   padding: 1rem 1.5rem; background: var(--ck-gray-50); display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--ck-gray-200);
+  flex-shrink: 0;
 }
 .btn {
   padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: var(--ck-radius-md); cursor: pointer; transition: all 0.2s; border: 1px solid transparent;

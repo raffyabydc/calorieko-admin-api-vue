@@ -147,12 +147,27 @@ class DashboardController extends Controller
         $engaged = $profiles->filter(fn($p) => $recentUids->contains($p->uid));
         $dormant = $profiles->filter(fn($p) => !$recentUids->contains($p->uid));
 
-        // Avg consistency = average number of days (out of 7) each active user has logged nutrition data
+        // Avg consistency = average number of distinct days (out of 7) each active user has logged
+        // ANY data (food OR activity). Uses a UNION query to merge both tables.
         $weekAgoEpochDay = (int) floor(Carbon::now()->subDays(7)->timestamp / 86400);
-        $daysPerUser = DailyNutritionSummary::where('date_epoch_day', '>=', $weekAgoEpochDay)
-            ->select('uid', DB::raw('COUNT(DISTINCT date_epoch_day) as days_logged'))
+
+        // Nutrition dates (epoch_day)
+        $nutritionQuery = DB::table('daily_nutrition_summary_table')
+            ->where('date_epoch_day', '>=', $weekAgoEpochDay)
+            ->select('uid', DB::raw('date_epoch_day as active_day'));
+
+        // Activity dates (epoch_millis → epoch_day via integer division)
+        $activityQuery = DB::table('activity_log_table')
+            ->where('timestamp', '>=', $sevenDaysAgoMs)
+            ->select('uid', DB::raw('CAST(FLOOR(timestamp / 86400000) AS UNSIGNED) as active_day'));
+
+        // Union both, then group by uid and count distinct days
+        $daysPerUser = DB::query()
+            ->fromSub($nutritionQuery->union($activityQuery), 'merged')
+            ->select('uid', DB::raw('COUNT(DISTINCT active_day) as days_logged'))
             ->groupBy('uid')
             ->pluck('days_logged');
+
         $avgConsistency = $daysPerUser->count() > 0
             ? round($daysPerUser->avg())
             : 0;
