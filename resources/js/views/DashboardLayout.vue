@@ -53,6 +53,10 @@
             <MapPinIcon class="topbar__location-icon" />
             <span>Node Location: {{ nodeLocation }}</span>
           </div>
+          <button class="topbar__refresh" @click="forceRefresh" :disabled="isRefreshing" title="Refresh Data">
+            <RefreshCwIcon class="topbar__refresh-icon" :class="{ 'topbar__refresh-icon--spinning': isRefreshing }" />
+            <span>Refresh Data</span>
+          </button>
         </div>
         <div class="topbar__encryption" :class="{ 'topbar__encryption--inactive': !isEncrypted }">
           <LockIcon v-if="isEncrypted" class="topbar__encryption-icon" />
@@ -66,7 +70,7 @@
         <div class="content__inner">
           <router-view v-slot="{ Component }">
             <transition name="fade" mode="out-in">
-              <component :is="Component" />
+              <component :is="Component" :key="componentKey" />
             </transition>
           </router-view>
         </div>
@@ -103,7 +107,8 @@ import {
   MapPin as MapPinIcon,
   Lock as LockIcon,
   Unlock as UnlockIcon,
-  LogOut as LogOutIcon
+  LogOut as LogOutIcon,
+  RefreshCw as RefreshCwIcon
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -127,6 +132,18 @@ const pageTitle = computed(() => {
 const showLogoutModal = ref(false)
 const nodeLocation = ref('Determining Node Network...')
 const isEncrypted = ref(true)
+
+// ── Global Refresh ──
+// Changing the :key on <component> forces Vue to destroy and remount the
+// current route view, re-triggering all onMounted hooks and data fetches.
+const componentKey = ref(0)
+const isRefreshing = ref(false)
+const forceRefresh = async () => {
+  isRefreshing.value = true
+  componentKey.value++
+  // Brief visual feedback, then reset the spinning icon
+  setTimeout(() => { isRefreshing.value = false }, 1200)
+}
 
 onMounted(() => {
   // Check for secure context (HTTPS or localhost)
@@ -511,5 +528,40 @@ const cancelLogout = () => {
 
 .btn--danger:hover {
   background: #dc2626;
+}
+
+/* --- Refresh Button --- */
+.topbar__refresh {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ck-primary);
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: var(--ck-radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.topbar__refresh:hover {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.4);
+}
+.topbar__refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.topbar__refresh-icon {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+.topbar__refresh-icon--spinning {
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 </style>

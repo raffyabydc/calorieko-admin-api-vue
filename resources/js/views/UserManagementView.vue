@@ -376,7 +376,7 @@
       <Transition name="dropdown-slide">
         <div v-if="activeMenu && selectedUserForMenu" 
              class="dropdown-menu" 
-             :style="{ position: 'fixed', top: menuPosition.top, right: menuPosition.right, margin: 0 }">
+             :style="{ position: 'fixed', top: menuPosition.top, bottom: menuPosition.bottom, right: menuPosition.right, margin: 0 }">
              
           <button class="dropdown-item" @click="showDetail(selectedUserForMenu); activeMenu = null">
             <EyeIcon :size="14" /> View Details
@@ -424,7 +424,7 @@ const participantActivityLogs = ref([])
 const loadingLogs = ref(false)
 const activeMenu = ref(null)
 const selectedUserForMenu = ref(null)
-const menuPosition = ref({ top: '0px', right: '0px' })
+const menuPosition = ref({ top: '0px', bottom: 'auto', right: '0px' })
 
 // Custom Confirmation Modals State
 const resetPasswordModal = ref({ show: false, user: null, status: 'confirm', errorMessage: '' })
@@ -521,9 +521,22 @@ const toggleMenu = (event, p) => {
     
     // Calculate fixed viewport positioning
     const rect = event.currentTarget.getBoundingClientRect()
-    menuPosition.value = {
-      top: `${rect.bottom + 4}px`,
-      right: `${window.innerWidth - rect.right}px`
+    const menuHeight = 240 // approximate dropdown height (5 items × ~48px)
+    const spaceBelow = window.innerHeight - rect.bottom
+    
+    // If not enough room below, position the menu ABOVE the button
+    if (spaceBelow < menuHeight) {
+      menuPosition.value = {
+        top: 'auto',
+        bottom: `${window.innerHeight - rect.top + 4}px`,
+        right: `${window.innerWidth - rect.right}px`
+      }
+    } else {
+      menuPosition.value = {
+        top: `${rect.bottom + 4}px`,
+        bottom: 'auto',
+        right: `${window.innerWidth - rect.right}px`
+      }
     }
   }
 }
@@ -746,6 +759,8 @@ const formatActivityLevel = (level) => {
 .dropdown-menu {
   z-index: 9999;
   min-width: 200px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
   background: white;
   border: 1px solid var(--ck-gray-200);
   border-radius: var(--ck-radius-md);
