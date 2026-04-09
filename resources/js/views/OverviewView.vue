@@ -27,7 +27,7 @@
         @click="refreshAll"
       >
         <RefreshCwIcon :size="16" :class="{ 'spin': syncing }" />
-        <span>{{ syncing ? 'Syncing...' : 'Sync Data' }}</span>
+        <span>{{ syncing ? 'Syncing...' : ' Refresh' }}</span>
       </button>
     </div>
 
