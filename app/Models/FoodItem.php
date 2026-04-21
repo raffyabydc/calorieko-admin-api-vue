@@ -13,6 +13,7 @@ class FoodItem extends Model
         'name_en',
         'name_ph',
         'category',
+        'ml_label',
         'calories_per_100g',
         'protein_per_100g',
         'carbs_per_100g',
@@ -30,6 +31,7 @@ class FoodItem extends Model
         'vitamin_c_per_100g',
         'calcium_per_100g',
         'iron_per_100g',
+        'data_source',
     ];
 
     protected $casts = [

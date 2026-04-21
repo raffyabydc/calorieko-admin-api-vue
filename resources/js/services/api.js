@@ -160,6 +160,20 @@ export async function deleteFood(id) {
     return res.json()
 }
 
+export async function bulkImportFoods(csvFile) {
+    const formData = new FormData()
+    formData.append('csv_file', csvFile)
+    const res = await authenticatedFetch(`${API_BASE}/foods/bulk-import`, {
+        method: 'POST',
+        body: formData
+    })
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.message || 'Failed to import CSV')
+    }
+    return res.json()
+}
+
 // ── System Logs ──
 export async function getSystemLogs() {
     return fetchJSON('/system-logs')

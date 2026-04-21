@@ -82,6 +82,7 @@ Route::prefix('admin')
     Route::post('/foods',             [FoodItemController::class, 'store']);
     Route::put('/foods/{id}',         [FoodItemController::class, 'update']);
     Route::delete('/foods/{id}',      [FoodItemController::class, 'destroy']);
+    Route::post('/foods/bulk-import', [FoodItemController::class, 'bulkImport']);
 
     // ── Activity Logs ──
     Route::get('/activity-logs',      [ActivityLogController::class, 'index']);
