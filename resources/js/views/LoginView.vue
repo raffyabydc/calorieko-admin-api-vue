@@ -73,7 +73,7 @@
             </div>
           </div>
           <p class="login-page__security-text">
-        
+            <strong>Compliance:</strong> RA 10173 (Data Privacy Act of 2012)
           </p>
         </div>
       </div>
