@@ -68,12 +68,12 @@
             <ShieldIcon class="login-page__security-icon" />
             <div>
               <p class="login-page__security-text">
-                <strong>Data Protection:</strong> Standard Bcrypt Hashing | Encrypted API Transit
+
               </p>
             </div>
           </div>
           <p class="login-page__security-text">
-            <strong>Compliance:</strong> RA 10173 (Data Privacy Act of 2012)
+        
           </p>
         </div>
       </div>
