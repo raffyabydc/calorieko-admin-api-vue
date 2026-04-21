@@ -137,28 +137,52 @@ class FoodItemController extends Controller
     }
 
     /**
-     * Admin: Bulk import food items from a CSV upload.
+     * Admin: Bulk import food items from a CSV or XLSX upload.
      *
-     * Expected CSV columns (header row required):
+     * Expected columns (header row required):
      *   ml_label, name_en, name_ph, category, calories_kcal, protein_g,
      *   carbs_g, fat_g, fiber_g, sugar_g, saturated_fat_g,
      *   polyunsaturated_fat_g, monounsaturated_fat_g, trans_fat_g,
      *   cholesterol_mg, sodium_mg, potassium_mg, vitamin_a_mcg,
      *   vitamin_c_mg, calcium_mg, iron_mg, data_source
+     *
+     * Supports: .csv, .txt, .xlsx, .xls
      */
     public function bulkImport(Request $request): JsonResponse
     {
         $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt|max:2048',
+            'csv_file' => 'required|file|max:5120',
         ]);
 
         $file = $request->file('csv_file');
-        $rows = array_map('str_getcsv', file($file->getRealPath()));
+        $ext = strtolower($file->getClientOriginalExtension());
+
+        // Parse rows based on file type
+        try {
+            if (in_array($ext, ['xlsx', 'xls'])) {
+                $rows = $this->parseSpreadsheet($file->getRealPath());
+            } else {
+                // CSV / TXT
+                $rows = array_map('str_getcsv', file($file->getRealPath()));
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to parse file: ' . $e->getMessage(),
+                'imported' => 0, 'skipped' => 0, 'errors' => [$e->getMessage()],
+            ], 422);
+        }
+
+        if (empty($rows) || count($rows) < 2) {
+            return response()->json([
+                'message' => 'File is empty or has no data rows.',
+                'imported' => 0, 'skipped' => 0, 'errors' => [],
+            ], 422);
+        }
 
         // Remove header row
         $header = array_shift($rows);
 
-        // Map CSV column names → DB column names
+        // Map spreadsheet/CSV column names → DB column names
         $columnMap = [
             'ml_label'                => 'ml_label',
             'name_en'                 => 'name_en',
@@ -197,9 +221,9 @@ class FoodItemController extends Controller
             // Build associative array from header
             $csvData = [];
             foreach ($header as $colIdx => $colName) {
-                $cleanName = trim(strtolower($colName));
+                $cleanName = trim(strtolower(strval($colName)));
                 if (isset($columnMap[$cleanName]) && isset($row[$colIdx])) {
-                    $csvData[$columnMap[$cleanName]] = trim($row[$colIdx]);
+                    $csvData[$columnMap[$cleanName]] = trim(strval($row[$colIdx]));
                 }
             }
 
@@ -248,14 +272,40 @@ class FoodItemController extends Controller
             "Imported: {$imported}, Skipped: {$skipped}",
             $skipped > 0 ? 'Partial' : 'Success',
             request()->ip(),
-            "Admin bulk imported {$imported} food items from CSV"
+            "Admin bulk imported {$imported} food items from " . strtoupper($ext)
         );
 
         return response()->json([
             'message'  => "Import complete: {$imported} imported, {$skipped} skipped.",
             'imported' => $imported,
             'skipped'  => $skipped,
-            'errors'   => array_slice($errors, 0, 10), // Return first 10 errors
+            'errors'   => array_slice($errors, 0, 10),
         ]);
+    }
+
+    /**
+     * Parse an XLSX/XLS file into a 2D array using PhpSpreadsheet.
+     * Returns the same structure as array_map('str_getcsv', ...) for consistency.
+     */
+    private function parseSpreadsheet(string $filePath): array
+    {
+        $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($filePath);
+        $worksheet = $spreadsheet->getActiveSheet();
+        $rows = [];
+
+        foreach ($worksheet->getRowIterator() as $row) {
+            $cellIterator = $row->getCellIterator();
+            $cellIterator->setIterateOnlyExistingCells(false);
+            $rowData = [];
+            foreach ($cellIterator as $cell) {
+                $rowData[] = $cell->getValue();
+            }
+            // Skip completely empty rows
+            if (array_filter($rowData, fn($v) => $v !== null && $v !== '') !== []) {
+                $rows[] = $rowData;
+            }
+        }
+
+        return $rows;
     }
 }

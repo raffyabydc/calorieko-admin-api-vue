@@ -288,7 +288,7 @@
           <div class="modal__body">
             <div class="import-info">
               <p style="font-size: 0.875rem; color: var(--ck-gray-600); margin-bottom: 1rem;">
-                Upload a CSV file with the PhilFCT schema. The first row must be a header row.
+                Upload a <strong>.csv</strong> or <strong>.xlsx</strong> file with the PhilFCT schema. The first row must be a header row.
               </p>
               <div class="csv-schema-box">
                 <code style="font-size: 0.7rem; word-break: break-all; line-height: 1.4;">
@@ -302,12 +302,12 @@
               <div class="file-upload-zone" @dragover.prevent @drop.prevent="handleDrop" @click="triggerFileInput">
                 <UploadIcon :size="32" style="color: var(--ck-gray-400); margin-bottom: 0.5rem;" />
                 <p v-if="!importFile" style="font-size: 0.875rem; color: var(--ck-gray-500);">
-                  Click to select or drag &amp; drop a .csv file
+                  Click to select or drag &amp; drop a .csv or .xlsx file
                 </p>
                 <p v-else style="font-size: 0.875rem; color: var(--ck-primary); font-weight: 600;">
                   📄 {{ importFile.name }} ({{ (importFile.size / 1024).toFixed(1) }} KB)
                 </p>
-                <input ref="csvFileInput" type="file" accept=".csv,.txt" @change="handleFileSelect" style="display: none;" />
+                <input ref="csvFileInput" type="file" accept=".csv,.txt,.xlsx,.xls" @change="handleFileSelect" style="display: none;" />
               </div>
               <div v-if="importResult" class="import-result" :class="importResult.skipped > 0 ? 'import-result--warn' : 'import-result--ok'">
                 <p><strong>{{ importResult.message }}</strong></p>
@@ -516,7 +516,7 @@ const handleFileSelect = (e) => {
 
 const handleDrop = (e) => {
   const file = e.dataTransfer.files[0]
-  if (file && (file.name.endsWith('.csv') || file.name.endsWith('.txt'))) {
+  if (file && (file.name.endsWith('.csv') || file.name.endsWith('.txt') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
     importFile.value = file
   }
 }
