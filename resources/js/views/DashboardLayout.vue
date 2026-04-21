@@ -6,7 +6,12 @@
       <div class="sidebar__header">
         <div class="sidebar__logo">
           <div class="sidebar__logo-icon">
-            <span>CK</span>
+            <svg viewBox="0 0 40 40" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="18" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none"/>
+              <path d="M20 8 C14 14, 14 26, 20 32 C26 26, 26 14, 20 8Z" stroke="rgba(255,255,255,0.95)" stroke-width="1.2" fill="rgba(255,255,255,0.15)"/>
+              <path d="M8 20 C14 14, 26 14, 32 20 C26 26, 14 26, 8 20Z" stroke="rgba(255,255,255,0.95)" stroke-width="1.2" fill="rgba(255,255,255,0.15)"/>
+              <circle cx="20" cy="20" r="2.5" fill="rgba(255,255,255,0.8)"/>
+            </svg>
           </div>
           <div class="sidebar__logo-text">
             <h2>CalorieKo</h2>
