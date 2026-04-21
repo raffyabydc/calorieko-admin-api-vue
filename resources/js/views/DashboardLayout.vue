@@ -6,11 +6,11 @@
       <div class="sidebar__header">
         <div class="sidebar__logo">
           <div class="sidebar__logo-icon">
-            <svg viewBox="0 0 40 40" width="28" height="28" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="20" cy="20" r="18" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" fill="none"/>
-              <path d="M20 8 C14 14, 14 26, 20 32 C26 26, 26 14, 20 8Z" stroke="rgba(255,255,255,0.95)" stroke-width="1.2" fill="rgba(255,255,255,0.15)"/>
-              <path d="M8 20 C14 14, 26 14, 32 20 C26 26, 14 26, 8 20Z" stroke="rgba(255,255,255,0.95)" stroke-width="1.2" fill="rgba(255,255,255,0.15)"/>
-              <circle cx="20" cy="20" r="2.5" fill="rgba(255,255,255,0.8)"/>
+            <svg viewBox="0 0 40 40" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="20" cy="20" r="16" fill="rgba(255,255,255,0.18)"/>
+              <g transform="translate(8,7) scale(1)">
+                <path fill="rgba(255,255,255,0.95)" d="M6.05,8.05c-2.73,2.73 -2.73,7.15 -0.02,9.88c1.47,-3.4 4.09,-6.24 7.36,-7.93c-2.68,2.89 -4.32,6.73 -4.32,10.96c0,0.52 0.02,1.04 0.07,1.56c0.62,0.09 1.27,0.14 1.91,0.14c5.18,0 9.71,-2.78 12.2,-6.92c0,-0.01 0,-0.01 0,-0.02c0.01,-4.14 -1.57,-8.28 -4.74,-11.45c-2.73,-2.73 -7.17,-2.73 -9.9,0L6.05,8.05z"/>
+              </g>
             </svg>
           </div>
           <div class="sidebar__logo-text">

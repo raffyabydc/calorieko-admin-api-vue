@@ -16,15 +16,14 @@
         <!-- Logo -->
         <div class="left-content">
           <div class="brand-circle">
-            <svg viewBox="0 0 80 80" width="80" height="80" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <!-- Outer ring -->
-              <circle cx="40" cy="40" r="36" stroke="rgba(255,255,255,0.6)" stroke-width="2" fill="none"/>
-              <!-- Leaf 1 -->
-              <path d="M40 16 C28 28, 28 52, 40 64 C52 52, 52 28, 40 16Z" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
-              <!-- Leaf 2 (rotated) -->
-              <path d="M16 40 C28 28, 52 28, 64 40 C52 52, 28 52, 16 40Z" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
-              <!-- Center dot -->
-              <circle cx="40" cy="40" r="4" fill="rgba(255,255,255,0.7)"/>
+            <svg viewBox="0 0 80 80" width="80" height="80" xmlns="http://www.w3.org/2000/svg">
+              <!-- White circle background -->
+              <circle cx="40" cy="40" r="34" fill="rgba(255,255,255,0.2)"/>
+              <circle cx="40" cy="40" r="26" fill="rgba(255,255,255,0.95)"/>
+              <!-- Eco leaf (same as mobile splash) -->
+              <g transform="translate(20,17) scale(1.7)">
+                <path fill="#2d8f55" d="M6.05,8.05c-2.73,2.73 -2.73,7.15 -0.02,9.88c1.47,-3.4 4.09,-6.24 7.36,-7.93c-2.68,2.89 -4.32,6.73 -4.32,10.96c0,0.52 0.02,1.04 0.07,1.56c0.62,0.09 1.27,0.14 1.91,0.14c5.18,0 9.71,-2.78 12.2,-6.92c0,-0.01 0,-0.01 0,-0.02c0.01,-4.14 -1.57,-8.28 -4.74,-11.45c-2.73,-2.73 -7.17,-2.73 -9.9,0L6.05,8.05z"/>
+              </g>
             </svg>
           </div>
           <h2 class="brand-name">CalorieKo</h2>
