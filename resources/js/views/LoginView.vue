@@ -1,85 +1,108 @@
 <template>
   <div class="login-page">
-    <!-- Background gradient -->
-    <div class="login-page__bg"></div>
+    <!-- Split Container -->
+    <div class="login-split">
 
-    <!-- Version number -->
-    <div class="login-page__version font-mono">v1.0.2-Stable</div>
+      <!-- LEFT PANEL — Green Nature Side -->
+      <div class="login-split__left">
+        <div class="left-overlay"></div>
+        <!-- Floating leaf shapes -->
+        <div class="leaf leaf--1"></div>
+        <div class="leaf leaf--2"></div>
+        <div class="leaf leaf--3"></div>
+        <div class="leaf leaf--4"></div>
+        <div class="leaf leaf--5"></div>
 
-    <!-- Main login card -->
-    <div class="login-page__card-wrapper">
-      <div class="login-page__card ck-glass">
-        <!-- Logo & Title -->
-        <div class="login-page__header">
-          <div class="login-page__logo">
-            <span>CK</span>
+        <!-- Logo -->
+        <div class="left-content">
+          <div class="brand-circle">
+            <svg viewBox="0 0 80 80" width="80" height="80" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- Outer ring -->
+              <circle cx="40" cy="40" r="36" stroke="rgba(255,255,255,0.6)" stroke-width="2" fill="none"/>
+              <!-- Leaf 1 -->
+              <path d="M40 16 C28 28, 28 52, 40 64 C52 52, 52 28, 40 16Z" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
+              <!-- Leaf 2 (rotated) -->
+              <path d="M16 40 C28 28, 52 28, 64 40 C52 52, 28 52, 16 40Z" stroke="rgba(255,255,255,0.9)" stroke-width="1.5" fill="rgba(255,255,255,0.08)"/>
+              <!-- Center dot -->
+              <circle cx="40" cy="40" r="4" fill="rgba(255,255,255,0.7)"/>
+            </svg>
           </div>
-          <h1 class="login-page__title">CalorieKo</h1>
-          <p class="login-page__subtitle">Admin & Data Management Portal</p>
+          <h2 class="brand-name">CalorieKo</h2>
+          <p class="brand-tagline">Nutrition Intelligence Platform</p>
         </div>
 
-        <!-- Login Form -->
-        <form @submit.prevent="handleLogin" class="login-page__form">
-          <!-- Email -->
-          <div class="login-page__field">
-            <label for="email" class="login-page__label">Admin ID / Email</label>
-            <div class="login-page__input-wrapper">
-              <UserIcon class="login-page__input-icon" />
-              <input
-                id="email"
-                type="text"
-                v-model="email"
-                placeholder="researcher@calorieko.ph"
-                class="ck-input ck-input--with-icon"
-              />
+        <!-- Version badge -->
+        <div class="version-badge">v1.0.2-Stable</div>
+      </div>
+
+      <!-- RIGHT PANEL — Form Side -->
+      <div class="login-split__right">
+        <div class="form-container">
+          <h1 class="form-title">Welcome!</h1>
+          <p class="form-subtitle">Admin & Data Management Portal</p>
+
+          <form @submit.prevent="handleLogin" class="login-form">
+            <!-- Email Field -->
+            <div class="field">
+              <div class="field__input-wrap">
+                <UserIcon class="field__icon" />
+                <input
+                  id="login-email"
+                  type="text"
+                  v-model="email"
+                  placeholder="Admin ID / Email"
+                  class="field__input"
+                  autocomplete="username"
+                />
+              </div>
             </div>
-          </div>
 
-          <!-- Password -->
-          <div class="login-page__field">
-            <label for="password" class="login-page__label">Password</label>
-            <div class="login-page__input-wrapper">
-              <LockIcon class="login-page__input-icon" />
-              <input
-                id="password"
-                type="password"
-                v-model="password"
-                placeholder="••••••••••••"
-                class="ck-input ck-input--with-icon"
-              />
+            <!-- Password Field -->
+            <div class="field">
+              <div class="field__input-wrap">
+                <LockIcon class="field__icon" />
+                <input
+                  id="login-password"
+                  type="password"
+                  v-model="password"
+                  placeholder="Password"
+                  class="field__input"
+                  autocomplete="current-password"
+                />
+              </div>
             </div>
-          </div>
 
-          <!-- Error Message -->
-          <div v-if="errorMessage" class="login-page__error ck-alert ck-alert--error" style="background-color: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 0.75rem 1rem; border-radius: 0.5rem; font-size: 0.875rem; display: flex; align-items: flex-start; gap: 0.5rem; animation: fadeInUp 0.3s ease-out;">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 0.125rem;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            <p style="margin: 0; line-height: 1.4;">{{ errorMessage }}</p>
-          </div>
+            <!-- Error Message -->
+            <Transition name="shake">
+              <div v-if="errorMessage" class="error-msg">
+                <AlertCircleIcon :size="16" />
+                <p>{{ errorMessage }}</p>
+              </div>
+            </Transition>
 
-          <!-- Submit -->
-          <button type="submit" class="ck-btn ck-btn--primary ck-btn--full login-page__submit" :disabled="loading">
-            {{ loading ? 'Authenticating...' : 'Authorize Access' }}
-          </button>
-        </form>
+            <!-- Submit Button -->
+            <button type="submit" class="submit-btn" :disabled="loading">
+              <span v-if="!loading">Authorize Access</span>
+              <span v-else class="loading-state">
+                <span class="spinner"></span>
+                Authenticating...
+              </span>
+            </button>
+          </form>
 
-        <!-- Security Footer -->
-        <div class="login-page__security">
-          <div class="login-page__security-row">
-            <ShieldIcon class="login-page__security-icon" />
-            <div>
-              <p class="login-page__security-text">
-
-              </p>
+          <!-- Security Footer -->
+          <div class="security-footer">
+            <div class="security-footer__row">
+              <ShieldIcon :size="14" class="security-footer__icon" />
+              <span>AES-256 Data Protection: Active</span>
             </div>
+            <p class="security-footer__compliance">
+              <strong>Compliance:</strong> RA 10173 (Data Privacy Act of 2012)
+            </p>
           </div>
-          <p class="login-page__security-text">
-            <strong>Compliance:</strong> RA 10173 (Data Privacy Act of 2012)
-          </p>
         </div>
       </div>
 
-      <!-- Glow effect -->
-      <div class="login-page__glow"></div>
     </div>
   </div>
 </template>
@@ -87,7 +110,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { User as UserIcon, Lock as LockIcon, Shield as ShieldIcon } from 'lucide-vue-next'
+import { User as UserIcon, Lock as LockIcon, Shield as ShieldIcon, AlertCircle as AlertCircleIcon } from 'lucide-vue-next'
 import { adminLogin } from '../services/api.js'
 
 const router = useRouter()
@@ -119,217 +142,342 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
+/* ═══════════════════════════════════════════════
+   LOGIN PAGE — Split Panel Nature Theme
+   ═══════════════════════════════════════════════ */
+
 .login-page {
   width: 100%;
   min-height: 100vh;
-  background: #e8eef3;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  background: #e8eef3;
+  padding: 1.5rem;
+}
+
+.login-split {
+  display: flex;
+  width: 100%;
+  max-width: 860px;
+  min-height: 520px;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  box-shadow:
+    0 25px 60px rgba(0, 0, 0, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+  animation: cardRise 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ─── LEFT PANEL ─── */
+.login-split__left {
+  flex: 1;
   position: relative;
+  background: linear-gradient(160deg, #1a6b3c 0%, #2d8f55 30%, #3aaa68 60%, #5dc07e 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
-.login-page__bg {
+.left-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, #e8eef3, #f0f4f8, #e8eef3);
-  opacity: 0.7;
+  background:
+    radial-gradient(circle at 30% 70%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 70% 20%, rgba(0,0,0,0.1) 0%, transparent 50%);
 }
 
-.login-page__version {
+/* Floating leaf shapes (CSS-only) */
+.leaf {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
-  font-size: 0.75rem;
-  color: var(--ck-gray-600);
+  border-radius: 50% 0 50% 0;
+  background: rgba(255, 255, 255, 0.06);
+  animation: leafFloat 20s ease-in-out infinite;
 }
+.leaf--1 { width: 120px; height: 120px; top: -20px; left: -30px; animation-delay: 0s; }
+.leaf--2 { width: 80px; height: 80px; bottom: 40px; right: -20px; animation-delay: -5s; transform: rotate(45deg); }
+.leaf--3 { width: 60px; height: 60px; top: 30%; right: 15%; animation-delay: -10s; background: rgba(255,255,255,0.04); }
+.leaf--4 { width: 100px; height: 100px; bottom: -20px; left: 20%; animation-delay: -3s; transform: rotate(20deg); }
+.leaf--5 { width: 40px; height: 40px; top: 15%; left: 25%; animation-delay: -8s; background: rgba(255,255,255,0.08); }
 
-.login-page__card-wrapper {
+.left-content {
   position: relative;
-  width: 100%;
-  max-width: 28rem;
-  animation: fadeInUp 0.6s ease-out;
-}
-
-.login-page__card {
-  position: relative;
-  border-radius: var(--ck-radius-2xl);
-  padding: 2.5rem;
-}
-
-.login-page__header {
+  z-index: 2;
   text-align: center;
-  margin-bottom: 2.5rem;
+  color: white;
 }
 
-.login-page__logo {
-  width: 3rem;
-  height: 3rem;
-  background: var(--ck-primary);
-  border-radius: var(--ck-radius-lg);
+.brand-circle {
+  margin: 0 auto 1.25rem;
+  animation: gentlePulse 4s ease-in-out infinite;
+}
+
+.brand-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.35rem;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.brand-tagline {
+  font-size: 0.8125rem;
+  opacity: 0.75;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+}
+
+.version-badge {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6875rem;
+  color: rgba(255,255,255,0.45);
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  letter-spacing: 0.03em;
+}
+
+/* ─── RIGHT PANEL ─── */
+.login-split__right {
+  flex: 1;
+  background: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 0.75rem;
+  padding: 3rem 2.5rem;
 }
 
-.login-page__logo span {
-  color: white;
-  font-size: 1.5rem;
+.form-container {
+  width: 100%;
+  max-width: 320px;
+}
+
+.form-title {
+  font-size: 2rem;
   font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 0.25rem;
+  letter-spacing: -0.02em;
 }
 
-.login-page__title {
-  font-size: 1.875rem;
-  font-weight: 600;
-  color: var(--ck-gray-800);
-  margin-bottom: 0.5rem;
+.form-subtitle {
+  font-size: 0.8125rem;
+  color: #94a3b8;
+  margin-bottom: 2rem;
 }
 
-.login-page__subtitle {
-  font-size: 0.875rem;
-  color: var(--ck-gray-600);
-  letter-spacing: 0.025em;
-}
-
-.login-page__form {
+/* ─── FORM FIELDS ─── */
+.login-form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-.login-page__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.login-page__label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--ck-gray-800);
-}
-
-.login-page__input-wrapper {
+.field__input-wrap {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.login-page__input-icon {
+.field__icon {
   position: absolute;
-  left: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 1.25rem;
-  height: 1.25rem;
-  color: var(--ck-gray-500);
+  left: 1rem;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: #94a3b8;
   pointer-events: none;
+  transition: color 0.2s;
 }
 
-.login-page__submit {
-  padding: 0.875rem;
-  font-size: 0.9375rem;
-  letter-spacing: 0.025em;
-  box-shadow: var(--ck-shadow-lg);
-}
-
-.login-page__submit:hover {
-  box-shadow: var(--ck-shadow-xl);
-}
-
-.login-page__session {
-  display: flex;
-  align-items: center;
-  padding-top: 0.5rem;
-}
-
-.login-page__toggle {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  cursor: pointer;
-}
-
-.login-page__toggle-input {
-  display: none;
-}
-
-.login-page__toggle-track {
-  width: 2.75rem;
-  height: 1.5rem;
-  background: var(--ck-gray-300);
-  border-radius: var(--ck-radius-full);
-  position: relative;
-  transition: background var(--ck-transition-base);
-  flex-shrink: 0;
-}
-
-.login-page__toggle-input:checked + .login-page__toggle-track {
-  background: var(--ck-primary);
-}
-
-.login-page__toggle-thumb {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 1.25rem;
-  height: 1.25rem;
-  background: white;
-  border-radius: 50%;
-  transition: transform var(--ck-transition-base);
-  box-shadow: var(--ck-shadow-sm);
-}
-
-.login-page__toggle-input:checked + .login-page__toggle-track .login-page__toggle-thumb {
-  transform: translateX(1.25rem);
-}
-
-.login-page__toggle-label {
+.field__input {
+  width: 100%;
+  padding: 0.875rem 1rem 0.875rem 3rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
-  color: var(--ck-gray-600);
+  color: #1e293b;
+  background: #f8fafc;
+  outline: none;
+  transition: all 0.25s ease;
 }
 
-.login-page__security {
-  margin-top: 2rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(209, 213, 219, 0.5);
+.field__input::placeholder {
+  color: #94a3b8;
 }
 
-.login-page__security-row {
+.field__input:focus {
+  border-color: #3aaa68;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(58, 170, 104, 0.1);
+}
+
+.field__input:focus + .field__icon,
+.field__input-wrap:focus-within .field__icon {
+  color: #3aaa68;
+}
+
+/* ─── ERROR ─── */
+.error-msg {
   display: flex;
   align-items: flex-start;
   gap: 0.5rem;
-  margin-bottom: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.625rem;
+  color: #dc2626;
+  font-size: 0.8125rem;
+  line-height: 1.4;
 }
 
-.login-page__security-icon {
+.error-msg p {
+  margin: 0;
+}
+
+/* ─── SUBMIT BUTTON ─── */
+.submit-btn {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.9375rem 1rem;
+  background: linear-gradient(135deg, #2d8f55, #3aaa68);
+  color: white;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px rgba(45, 143, 85, 0.3);
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(45, 143, 85, 0.4);
+  background: linear-gradient(135deg, #268049, #34a060);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.submit-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.625rem;
+}
+
+.spinner {
   width: 1rem;
   height: 1rem;
-  color: var(--ck-primary);
-  margin-top: 2px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* ─── SECURITY FOOTER ─── */
+.security-footer {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.security-footer__row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background: #ecfdf5;
+  border-radius: 999px;
+  width: fit-content;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #059669;
+}
+
+.security-footer__icon {
   flex-shrink: 0;
 }
 
-.login-page__security-text {
-  font-size: 0.75rem;
-  color: var(--ck-gray-600);
+.security-footer__compliance {
+  font-size: 0.6875rem;
+  color: #94a3b8;
   line-height: 1.5;
 }
 
-.login-page__security-text strong {
-  color: var(--ck-gray-700);
-  font-weight: 600;
+.security-footer__compliance strong {
+  color: #64748b;
 }
 
-.login-page__glow {
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  filter: blur(48px);
-  opacity: 0.1;
-  background: linear-gradient(135deg, var(--ck-primary), var(--ck-primary-hover));
-  border-radius: var(--ck-radius-2xl);
-  transform: scale(1.05);
+/* ═══════════════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════════════ */
+
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(30px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes leafFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25%      { transform: translateY(-8px) rotate(3deg); }
+  50%      { transform: translateY(4px) rotate(-2deg); }
+  75%      { transform: translateY(-4px) rotate(1deg); }
+}
+
+@keyframes gentlePulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.04); opacity: 0.9; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.shake-enter-active {
+  animation: shakeIn 0.4s ease-out;
+}
+
+@keyframes shakeIn {
+  0%   { opacity: 0; transform: translateX(-10px); }
+  25%  { transform: translateX(6px); }
+  50%  { transform: translateX(-4px); }
+  75%  { transform: translateX(2px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════ */
+
+@media (max-width: 720px) {
+  .login-split {
+    flex-direction: column;
+    max-width: 420px;
+    min-height: auto;
+  }
+
+  .login-split__left {
+    min-height: 200px;
+    padding: 2rem 1rem;
+  }
+
+  .brand-name { font-size: 1.375rem; }
+
+  .login-split__right {
+    padding: 2rem 1.5rem;
+  }
+
+  .form-title { font-size: 1.5rem; }
 }
 </style>
