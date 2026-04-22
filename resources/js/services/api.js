@@ -85,9 +85,13 @@ export async function getProfile(uid) {
 
 export async function deactivateProfile(uid) {
     const res = await authenticatedFetch(`${API_BASE}/profiles/${uid}/deactivate`, {
-        method: 'PUT'
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
     })
-    if (!res.ok) throw new Error('Failed to toggle active status')
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || err.message || 'Failed to toggle active status')
+    }
     return res.json()
 }
 

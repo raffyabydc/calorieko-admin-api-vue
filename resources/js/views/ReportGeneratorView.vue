@@ -23,7 +23,7 @@
                 <tbody>
                   <tr v-for="(row, idx) in previewData" :key="idx">
                     <td v-for="(val, colIdx) in Object.values(row)" :key="colIdx">
-                      {{ val !== null && val !== undefined ? (typeof val === 'object' ? JSON.stringify(val).substring(0,30) + '...' : String(val)) : '—' }}
+                      {{ formatCellValue(val) }}
                     </td>
                   </tr>
                 </tbody>
@@ -94,8 +94,8 @@ import {
   FileText as FileTextIcon
 } from 'lucide-vue-next'
 import { getProfiles, getNutritionSummaries, getMealLogs, getActivityLogs } from '../services/api.js'
-import jsPDF from 'jspdf'
-import 'jspdf-autotable'
+import { jsPDF } from 'jspdf'
+import { autoTable } from 'jspdf-autotable'
 
 const selectedType = ref('profiles')
 const isExporting = ref(false)
@@ -138,6 +138,21 @@ const loadPreview = async () => {
 
 onMounted(() => loadPreview())
 watch(selectedType, () => loadPreview())
+
+// Format cell values for display
+const formatCellValue = (val) => {
+  if (val === null || val === undefined) return '—'
+  if (Array.isArray(val)) {
+    if (val.length === 0) return '—'
+    return val.map(item => {
+      if (item.dish_name) return `${item.dish_name} (${item.weight_grams ?? 0}g)`
+      if (item.name) return item.name
+      return JSON.stringify(item)
+    }).join(', ')
+  }
+  if (typeof val === 'object') return JSON.stringify(val)
+  return String(val)
+}
 
 // CSV Export Logic
 const exportCSV = async () => {
@@ -243,11 +258,16 @@ const exportPDF = async () => {
     const headers = Object.keys(data[0])
     const rows = data.map(obj =>
       Object.values(obj).map(val => {
-        return val !== null && val !== undefined ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : ''
+        if (val === null || val === undefined) return ''
+        if (Array.isArray(val)) {
+          return val.map(item => item.dish_name || item.name || JSON.stringify(item)).join(', ')
+        }
+        if (typeof val === 'object') return JSON.stringify(val)
+        return String(val)
       })
     )
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [headers],
       body: rows,
       startY: 20,

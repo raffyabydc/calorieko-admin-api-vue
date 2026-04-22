@@ -141,29 +141,36 @@ class UserProfileController extends Controller
      */
     public function deactivate(string $uid): JsonResponse
     {
-        $profile = UserProfile::findOrFail($uid);
-        $profile->is_active = !$profile->is_active;
-        $profile->save();
-
-        // Sync status to Firebase Authentication
         try {
-            if ($profile->is_active) {
-                app('firebase.auth')->enableUser($uid);
-            } else {
-                app('firebase.auth')->disableUser($uid);
+            $profile = UserProfile::findOrFail($uid);
+            $profile->is_active = !$profile->is_active;
+            $profile->save();
+
+            // Sync status to Firebase Authentication
+            try {
+                if ($profile->is_active) {
+                    app('firebase.auth')->enableUser($uid);
+                } else {
+                    app('firebase.auth')->disableUser($uid);
+                }
+            } catch (\Exception $e) {
+                \Log::error("Failed to sync Firebase Auth status for {$uid}: " . $e->getMessage());
             }
+
+            $adminEmail = config('app.admin_email') ?? 'admin@calorieko.com';
+            $statusStr = $profile->is_active ? 'Reactivated' : 'Deactivated';
+            SystemLog::log($adminEmail, "User {$statusStr}", "User UID: {$uid}", 'Success', request()->ip(), "Admin {$statusStr} user.");
+
+            return response()->json([
+                'message' => 'User status updated successfully.',
+                'is_active' => $profile->is_active
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['error' => 'User profile not found.'], 404);
         } catch (\Exception $e) {
-            \Log::error("Failed to sync Firebase Auth status for {$uid}: " . $e->getMessage());
+            \Log::error("Failed to toggle active status for {$uid}: " . $e->getMessage());
+            return response()->json(['error' => 'Failed to update user status: ' . $e->getMessage()], 500);
         }
-
-        $adminEmail = config('app.admin_email') ?? 'admin@calorieko.com';
-        $statusStr = $profile->is_active ? 'Reactivated' : 'Deactivated';
-        SystemLog::log($adminEmail, "User {$statusStr}", "User UID: {$uid}", 'Success', request()->ip(), "Admin {$statusStr} user {$profile->email}.");
-
-        return response()->json([
-            'message' => 'User status updated successfully.',
-            'is_active' => $profile->is_active
-        ]);
     }
 
     /**
