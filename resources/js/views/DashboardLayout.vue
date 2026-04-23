@@ -58,7 +58,8 @@
             <MapPinIcon class="topbar__location-icon" />
             <span>Node Location: {{ nodeLocation }}</span>
           </div>
-          <button class="topbar__refresh" @click="forceRefresh" :disabled="isRefreshing" title="Refresh Data">
+          <!-- Rule 3: Differentiated Labelling & Iconography (Global) -->
+          <button class="topbar__global-refresh" @click="forceRefresh" :disabled="isRefreshing" title="Reload Dashboard">
             <RefreshCwIcon class="topbar__refresh-icon" :class="{ 'topbar__refresh-icon--spinning': isRefreshing }" />
             <span>Refresh Data</span>
           </button>
@@ -69,6 +70,9 @@
           <span>AES-256 Data Protection: {{ isEncrypted ? 'Active' : 'Inactive' }}</span>
         </div>
       </header>
+
+      <!-- Rule 2: Top-level progress bar for global refresh -->
+      <div v-if="isRefreshing" class="global-progress-bar"></div>
 
       <!-- Page Content -->
       <main class="content custom-scrollbar">
@@ -535,35 +539,50 @@ const cancelLogout = () => {
   background: #dc2626;
 }
 
-/* --- Refresh Button --- */
-.topbar__refresh {
+/* --- Global Refresh Button (Rule 3) --- */
+.topbar__global-refresh {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8125rem;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
   font-weight: 500;
-  color: var(--ck-primary);
-  background: rgba(16, 185, 129, 0.08);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #15803d; /* text-green-700 */
+  background: transparent;
+  border: 1px solid #86efac; /* border-green-300 */
   border-radius: var(--ck-radius-md);
   cursor: pointer;
   transition: all 0.2s;
 }
-.topbar__refresh:hover {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.4);
+.topbar__global-refresh:hover {
+  background: #f0fdf4; /* hover:bg-green-50 */
 }
-.topbar__refresh:disabled {
+.topbar__global-refresh:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 .topbar__refresh-icon {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 1rem;
+  height: 1rem;
 }
 .topbar__refresh-icon--spinning {
   animation: spin 0.8s linear infinite;
+}
+
+/* --- Global Progress Bar (Rule 2) --- */
+.global-progress-bar {
+  width: 100%;
+  height: 4px;
+  background-color: #22c55e; /* bg-green-500 */
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  margin-bottom: -4px;
+  position: relative;
+  z-index: 50;
+  flex-shrink: 0;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
 }
 @keyframes spin {
   from { transform: rotate(0deg); }
