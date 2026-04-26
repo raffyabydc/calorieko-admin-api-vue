@@ -66,6 +66,7 @@ Route::prefix('admin')
 
     // ── Analytics (chart aggregation endpoints) ──
     Route::get('/analytics/nutrition-trends',  [DashboardController::class, 'nutritionTrends']);
+    Route::get('/analytics/step-trends',       [DashboardController::class, 'stepTrends']);
     Route::get('/analytics/top-dishes',        [DashboardController::class, 'topDishes']);
     Route::get('/analytics/user-consistency',  [DashboardController::class, 'userConsistency']);
 

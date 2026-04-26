@@ -33,12 +33,15 @@
 
     <KpiTiles ref="kpiRef" :refreshKey="refreshKey" />
 
-    <div class="grid-2" style="display: grid; grid-template-columns: 3fr 2fr; gap: 1.5rem;">
+    <div class="grid-2" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
         <NutritionTrendsChart ref="trendsRef" :refreshKey="refreshKey" />
-        <TopDishesChart ref="dishesRef" :refreshKey="refreshKey" />
+        <DailyStepsChart ref="stepsRef" :refreshKey="refreshKey" />
     </div>
 
-    <UserConsistencyChart ref="consistencyRef" :refreshKey="refreshKey" />
+    <div class="grid-2" style="display: grid; grid-template-columns: 3fr 2fr; gap: 1.5rem; margin-top: 1.5rem;">
+        <UserConsistencyChart ref="consistencyRef" :refreshKey="refreshKey" />
+        <TopDishesChart ref="dishesRef" :refreshKey="refreshKey" />
+    </div>
   </div>
 </template>
 
@@ -49,6 +52,7 @@ import KpiTiles from '../components/overview/KpiTiles.vue'
 import UserConsistencyChart from '../components/overview/UserConsistencyChart.vue'
 import TopDishesChart from '../components/overview/TopDishesChart.vue'
 import NutritionTrendsChart from '../components/overview/NutritionTrendsChart.vue'
+import DailyStepsChart from '../components/overview/DailyStepsChart.vue'
 
 const refreshKey = ref(0)
 const syncing = ref(false)

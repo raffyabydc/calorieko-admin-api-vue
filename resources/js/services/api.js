@@ -206,3 +206,7 @@ export async function getUserConsistency() {
     return fetchJSON('/analytics/user-consistency')
 }
 
+export async function getStepTrends() {
+    return fetchJSON('/analytics/step-trends')
+}
+

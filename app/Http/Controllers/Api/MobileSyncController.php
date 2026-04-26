@@ -84,6 +84,7 @@ class MobileSyncController extends Controller
             'activities.*.name'            => 'required|string',
             'activities.*.timestamp'       => 'required|integer',
             'activities.*.updated_at'      => 'required|integer',
+            'activities.*.steps'           => 'nullable|integer',
 
             // Nutrition Summaries
             'nutrition_summaries'                    => 'nullable|array',
@@ -310,6 +311,7 @@ class MobileSyncController extends Controller
                     'distanceKm'       => $activity['distanceKm'] ?? null,
                     'pace'             => $activity['pace'] ?? null,
                     'movingTimeSeconds'=> $activity['movingTimeSeconds'] ?? null,
+                    'steps'            => $activity['steps'] ?? null,
                     'mapType'          => $activity['mapType'] ?? null,
                     'notes'            => $activity['notes'] ?? null,
                     'activityTag'      => $activity['activityTag'] ?? null,

@@ -104,6 +104,49 @@ class DashboardController extends Controller
     }
 
     /**
+     * GET /api/admin/analytics/step-trends
+     *
+     * Returns daily average steps for the last 7 days.
+     */
+    public function stepTrends(): JsonResponse
+    {
+        $todayEpochDay   = (int) floor(Carbon::now()->timestamp / 86400);
+        $weekAgoEpochDay = $todayEpochDay - 6;
+
+        $sevenDaysAgoMs = $weekAgoEpochDay * 86400 * 1000;
+        
+        $profiles = UserProfile::active()->get();
+        $activeUsersCount = $profiles->count();
+
+        // Group activity logs by epoch day and sum steps
+        $activities = DB::table('activity_log_table')
+            ->where('timestamp', '>=', $sevenDaysAgoMs)
+            ->whereNotNull('steps')
+            ->select(DB::raw('CAST(FLOOR(timestamp / 86400000) AS UNSIGNED) as date_epoch_day'), DB::raw('SUM(steps) as day_total'))
+            ->groupBy('date_epoch_day')
+            ->pluck('day_total', 'date_epoch_day');
+
+        $labels = [];
+        $steps  = [];
+
+        for ($day = $weekAgoEpochDay; $day <= $todayEpochDay; $day++) {
+            $date = Carbon::createFromTimestamp($day * 86400);
+            $labels[] = $date->format('D');
+
+            $dayTotal = $activities->get($day, 0);
+            $avgDaySteps = $activeUsersCount > 0 ? round($dayTotal / $activeUsersCount) : 0;
+
+            $steps[] = $avgDaySteps;
+        }
+
+        return response()->json([
+            'labels'       => $labels,
+            'steps'        => $steps,
+            'averageSteps' => count($steps) > 0 ? round(array_sum($steps) / count($steps)) : 0,
+        ]);
+    }
+
+    /**
      * GET /api/admin/analytics/top-dishes
      *
      * Returns the top 5 most-logged dish names across all MealLogItems.

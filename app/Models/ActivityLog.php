@@ -24,6 +24,7 @@ class ActivityLog extends Model
         'distanceKm',
         'pace',
         'movingTimeSeconds',
+        'steps',
         'mapType',
         'notes',
         'activityTag',
@@ -39,5 +40,6 @@ class ActivityLog extends Model
         'distanceKm'=> 'double',
         'pace'      => 'double',
         'movingTimeSeconds' => 'integer',
+        'steps'     => 'integer',
     ];
 }
