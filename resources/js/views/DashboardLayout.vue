@@ -35,6 +35,11 @@
 
         <div style="flex-grow: 1"></div>
 
+        <button @click="showPasswordModal = true" class="sidebar__nav-item sidebar__nav-item--settings" style="margin-bottom: 0.5rem;">
+          <KeyIcon class="sidebar__nav-icon" />
+          <span>Change Password</span>
+        </button>
+
         <button @click="handleLogout" class="sidebar__nav-item sidebar__nav-item--logout">
           <LogOutIcon class="sidebar__nav-icon" />
           <span>Logout</span>
@@ -89,7 +94,7 @@
 
   <!-- Logout Confirmation Modal -->
   <div v-if="showLogoutModal" class="modal-overlay">
-    <div class="modal">
+    <div class="modal animate-fade-in" style="max-width: 400px;">
       <div class="modal__header">
         <h3>Confirm Logout</h3>
       </div>
@@ -100,6 +105,55 @@
         <button class="btn btn--secondary" @click="cancelLogout">Cancel</button>
         <button class="btn btn--danger" @click="confirmLogout">Log Out</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div v-if="showPasswordModal" class="modal-overlay" @click.self="closePasswordModal">
+    <div class="modal animate-fade-in" style="max-width: 450px;">
+      <div class="modal__header">
+        <h3>Change Admin Password</h3>
+        <button @click="closePasswordModal" class="modal__close"><XIcon :size="20" /></button>
+      </div>
+      <form @submit.prevent="submitPasswordChange">
+        <div class="modal__body" style="display: flex; flex-direction: column; gap: 1rem;">
+          
+          <div v-if="passwordStatus === 'success'" style="padding: 1rem; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 8px; color: #059669;">
+            <p style="font-weight: 600; display: flex; align-items: center; gap: 0.5rem;"><CheckCircle2Icon :size="18" /> Password Updated</p>
+            <p style="font-size: 0.875rem; margin-top: 0.25rem;">Your password has been successfully changed.</p>
+          </div>
+
+          <template v-else>
+            <div class="form-group">
+              <label class="form-label">Current Password</label>
+              <input v-model="passwordForm.current_password" type="password" class="ck-input" required>
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">New Password</label>
+              <input v-model="passwordForm.new_password" type="password" class="ck-input" required minlength="8">
+            </div>
+            
+            <div class="form-group">
+              <label class="form-label">Confirm New Password</label>
+              <input v-model="passwordForm.new_password_confirmation" type="password" class="ck-input" required minlength="8">
+            </div>
+            
+            <div v-if="passwordStatus === 'error'" style="color: #ef4444; font-size: 0.875rem; padding: 0.5rem; background: #fef2f2; border-radius: 6px;">
+              {{ passwordError }}
+            </div>
+          </template>
+
+        </div>
+        <div class="modal__footer">
+          <button type="button" class="btn btn--secondary" @click="closePasswordModal">
+            {{ passwordStatus === 'success' ? 'Close' : 'Cancel' }}
+          </button>
+          <button v-if="passwordStatus !== 'success'" type="submit" class="btn btn--primary" :disabled="passwordSubmitting">
+            {{ passwordSubmitting ? 'Updating...' : 'Update Password' }}
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 </template>
@@ -118,9 +172,11 @@ import {
   Unlock as UnlockIcon,
   LogOut as LogOutIcon,
   RefreshCw as RefreshCwIcon,
-  ShieldAlert as ShieldAlertIcon
+  ShieldAlert as ShieldAlertIcon,
+  Key as KeyIcon,
+  CheckCircle2 as CheckCircle2Icon
 } from 'lucide-vue-next'
-import { adminLogout } from '../services/api.js'
+import { adminLogout, updateAdminPassword } from '../services/api.js'
 
 const route = useRoute()
 const router = useRouter() // Initialize router
@@ -153,6 +209,47 @@ const pageTitle = computed(() => {
 const showLogoutModal = ref(false)
 const nodeLocation = ref('Determining Node Network...')
 const isEncrypted = ref(true)
+
+// Password Modal State
+const showPasswordModal = ref(false)
+const passwordSubmitting = ref(false)
+const passwordStatus = ref('idle') // idle, error, success
+const passwordError = ref('')
+const passwordForm = ref({
+  current_password: '',
+  new_password: '',
+  new_password_confirmation: ''
+})
+
+const closePasswordModal = () => {
+  showPasswordModal.value = false
+  setTimeout(() => {
+    passwordForm.value = { current_password: '', new_password: '', new_password_confirmation: '' }
+    passwordStatus.value = 'idle'
+    passwordError.value = ''
+  }, 200)
+}
+
+const submitPasswordChange = async () => {
+  if (passwordForm.value.new_password !== passwordForm.value.new_password_confirmation) {
+    passwordStatus.value = 'error'
+    passwordError.value = 'New passwords do not match.'
+    return
+  }
+  
+  passwordSubmitting.value = true
+  passwordStatus.value = 'idle'
+  
+  try {
+    await updateAdminPassword(passwordForm.value)
+    passwordStatus.value = 'success'
+  } catch (err) {
+    passwordStatus.value = 'error'
+    passwordError.value = err.message || 'Failed to update password. Please check your current password.'
+  } finally {
+    passwordSubmitting.value = false
+  }
+}
 
 // ── Global Refresh ──
 // Changing the :key on <component> forces Vue to destroy and remount the
@@ -495,6 +592,9 @@ const cancelLogout = () => {
 
 .modal__header {
   padding: 1.5rem 1.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .modal__header h3 {
@@ -502,6 +602,48 @@ const cancelLogout = () => {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--ck-gray-900, #111827);
+}
+
+.modal__close {
+  background: transparent;
+  border: none;
+  color: var(--ck-gray-400);
+  padding: 0.25rem;
+  border-radius: var(--ck-radius-md);
+  cursor: pointer;
+}
+.modal__close:hover {
+  background: var(--ck-gray-100);
+  color: var(--ck-gray-700);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ck-gray-700);
+}
+
+.ck-input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid var(--ck-gray-200);
+  border-radius: var(--ck-radius-lg);
+  font-size: 0.875rem;
+  color: var(--ck-gray-900);
+  background: white;
+  transition: all var(--ck-transition-fast);
+}
+
+.ck-input:focus {
+  outline: none;
+  border-color: var(--ck-primary);
+  box-shadow: 0 0 0 3px rgba(26, 107, 60, 0.1);
 }
 
 .modal__body {

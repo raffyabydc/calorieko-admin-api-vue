@@ -280,3 +280,14 @@ export async function deleteModerator(id) {
   })
 }
 
+// ═══════════════════════════════════════════════════════════════
+// Admin Self-Service Settings
+// ═══════════════════════════════════════════════════════════════
+
+export async function updateAdminPassword(data) {
+  return fetchJSON('/admin/password', {
+    method: 'PUT',
+    body: JSON.stringify(data)
+  })
+}
+

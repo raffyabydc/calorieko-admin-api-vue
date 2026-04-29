@@ -89,4 +89,29 @@ class AdminAuthController extends Controller
             'role'  => $user->role
         ]);
     }
+
+    /**
+     * PUT /api/admin/password
+     * Allows an authenticated admin/moderator to change their password.
+     */
+    public function updatePassword(Request $request)
+    {
+        $request->validate([
+            'current_password' => 'required|string',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $user = $request->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['error' => 'Your current password does not match our records.'], 400);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        SystemLog::log($user->email, 'Password Change', null, 'Success', $request->ip(), 'Admin successfully changed their password.');
+
+        return response()->json(['message' => 'Password updated successfully.']);
+    }
 }

@@ -143,4 +143,6 @@ Route::get('/health', function () {
     Route::put('/moderators/{id}/toggle', [App\Http\Controllers\Api\AdminManagementController::class, 'toggle']);
     Route::delete('/moderators/{id}', [App\Http\Controllers\Api\AdminManagementController::class, 'destroy']);
     
+    // ── Self-Service Admin Actions ──
+    Route::put('/password', [App\Http\Controllers\Api\AdminAuthController::class, 'updatePassword']);
 });
