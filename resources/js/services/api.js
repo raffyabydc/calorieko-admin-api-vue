@@ -252,3 +252,28 @@ export async function getWeeklyReport(uid, startDate, endDate) {
     if (params.length) url += '?' + params.join('&')
     return fetchJSON(url)
 }
+
+// ═══════════════════════════════════════════════════════════════
+// Admin & Moderator Management (Super Admin Only)
+// ═══════════════════════════════════════════════════════════════
+
+export async function getModerators() {
+  const res = await api.get('/admin/moderators')
+  return res.data
+}
+
+export async function createModerator(data) {
+  const res = await api.post('/admin/moderators', data)
+  return res.data
+}
+
+export async function toggleModerator(id) {
+  const res = await api.put(`/admin/moderators/${id}/toggle`)
+  return res.data
+}
+
+export async function deleteModerator(id) {
+  const res = await api.delete(`/admin/moderators/${id}`)
+  return res.data
+}
+

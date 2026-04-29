@@ -180,7 +180,7 @@ import { getProfile, getWeeklyReport } from '../services/api.js'
 import CorrelationChart from '../components/overview/CorrelationChart.vue'
 import WeightTrendChart from '../components/overview/WeightTrendChart.vue'
 import { jsPDF } from 'jspdf'
-import { autoTable } from 'jspdf-autotable'
+import autoTable from 'jspdf-autotable'
 
 const route = useRoute()
 const uid = computed(() => route.params.uid)

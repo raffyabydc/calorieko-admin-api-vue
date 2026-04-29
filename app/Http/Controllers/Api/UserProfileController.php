@@ -141,6 +141,11 @@ class UserProfileController extends Controller
      */
     public function deactivate(string $uid): JsonResponse
     {
+        $user = request()->user();
+        if ($user && $user->role !== 'Super Admin') {
+            return response()->json(['error' => 'Permission denied. Only Super Admins can deactivate or ban users.'], 403);
+        }
+
         try {
             $profile = UserProfile::findOrFail($uid);
             $profile->is_active = !$profile->is_active;
@@ -157,7 +162,7 @@ class UserProfileController extends Controller
                 \Log::error("Failed to sync Firebase Auth status for {$uid}: " . $e->getMessage());
             }
 
-            $adminEmail = config('app.admin_email') ?? 'admin@calorieko.com';
+            $adminEmail = $user ? $user->email : (config('app.admin_email') ?? 'admin@calorieko.com');
             $statusStr = $profile->is_active ? 'Reactivated' : 'Deactivated';
             SystemLog::log($adminEmail, "User {$statusStr}", "User UID: {$uid}", 'Success', request()->ip(), "Admin {$statusStr} user.");
 
@@ -210,6 +215,11 @@ class UserProfileController extends Controller
      */
     public function destroy(string $uid): JsonResponse
     {
+        $user = request()->user();
+        if ($user && $user->role !== 'Super Admin') {
+            return response()->json(['error' => 'Permission denied. Only Super Admins can delete users.'], 403);
+        }
+
         $profile = UserProfile::findOrFail($uid);
         $email = $profile->email;
 
@@ -227,7 +237,7 @@ class UserProfileController extends Controller
             \Log::error("Failed to delete user from Firebase Auth {$uid}: " . $e->getMessage());
         }
 
-        $adminEmail = config('app.admin_email') ?? 'admin@calorieko.com';
+        $adminEmail = $user ? $user->email : (config('app.admin_email') ?? 'admin@calorieko.com');
         SystemLog::log($adminEmail, 'Deleted User', "User UID: {$uid}", 'Success', request()->ip(), "Admin deleted user {$email}.");
 
         \Log::info("User profile deleted for UID: {$uid}");

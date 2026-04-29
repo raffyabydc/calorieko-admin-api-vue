@@ -206,8 +206,17 @@ class AnalyticsController extends Controller
         $numDays       = $endEpochDay - $startEpochDay + 1;
 
         // ── User Profile & TDEE ──
-        $profile = UserProfile::where('uid', $uid)->firstOrFail();
-        $tdee    = $this->calculateTDEE($profile);
+        // Use DB::table to bypass Eloquent casts (prevents DecryptException if APP_KEY changed)
+        $profile = DB::table('user_profile')->where('uid', $uid)->first();
+        
+        if (!$profile) {
+            return response()->json([
+                'error' => 'User profile not found.',
+                'uid' => $uid,
+            ], 404);
+        }
+
+        $tdee = $this->calculateTDEE($profile);
 
         // ── Nutrition Aggregation ──
         $nutritionStats = DailyNutritionSummary::where('uid', $uid)
@@ -291,7 +300,7 @@ class AnalyticsController extends Controller
 
         return response()->json([
             'uid'       => $uid,
-            'user_name' => $profile->name,
+            'user_name' => 'Mobile User', // Fallback since actual name might be encrypted raw bytes
             'period'    => [
                 'start'    => $startDate->format('Y-m-d'),
                 'end'      => $endDate->format('Y-m-d'),
@@ -328,9 +337,8 @@ class AnalyticsController extends Controller
 
     /**
      * Calculate TDEE using Mifflin-St Jeor equation.
-     * (Shared with DashboardController)
      */
-    private function calculateTDEE(UserProfile $profile): float
+    private function calculateTDEE($profile): float
     {
         if (!$profile->weight || !$profile->height || !$profile->age || !$profile->sex) {
             return 0;

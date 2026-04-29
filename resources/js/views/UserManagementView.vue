@@ -182,7 +182,7 @@
           </div>
           <div class="modal__footer">
             <button class="btn btn--secondary" @click="showLogs(selectedParticipant); selectedParticipant = null">View Local Logs</button>
-            <button class="btn" :class="selectedParticipant.is_active !== false ? 'btn--danger' : 'btn--primary'" 
+            <button v-if="isSuperAdmin" class="btn" :class="selectedParticipant.is_active !== false ? 'btn--danger' : 'btn--primary'" 
               @click="deactivateUser(selectedParticipant); selectedParticipant = null">
               {{ selectedParticipant.is_active !== false ? 'Deactivate' : 'Reactivate' }}
             </button>
@@ -390,12 +390,14 @@
           <button class="dropdown-item" @click="showLogs(selectedUserForMenu); activeMenu = null">
             <FileTextIcon :size="14" /> View Local Logs
           </button>
-          <button class="dropdown-item" :class="selectedUserForMenu.is_active !== false ? 'dropdown-item--warning' : ''" @click="deactivateUser(selectedUserForMenu); activeMenu = null">
-            <UserXIcon :size="14" /> {{ selectedUserForMenu.is_active !== false ? 'Deactivate User' : 'Reactivate User' }}
-          </button>
-          <button class="dropdown-item dropdown-item--danger" @click="deleteUser(selectedUserForMenu); activeMenu = null">
-            <TrashIcon :size="14" /> Delete User
-          </button>
+          <template v-if="isSuperAdmin">
+            <button class="dropdown-item" :class="selectedUserForMenu.is_active !== false ? 'dropdown-item--warning' : ''" @click="deactivateUser(selectedUserForMenu); activeMenu = null">
+              <UserXIcon :size="14" /> {{ selectedUserForMenu.is_active !== false ? 'Deactivate User' : 'Reactivate User' }}
+            </button>
+            <button class="dropdown-item dropdown-item--danger" @click="deleteUser(selectedUserForMenu); activeMenu = null">
+              <TrashIcon :size="14" /> Delete User
+            </button>
+          </template>
         </div>
       </Transition>
     </Teleport>
@@ -432,6 +434,8 @@ const loadingLogs = ref(false)
 const activeMenu = ref(null)
 const selectedUserForMenu = ref(null)
 const menuPosition = ref({ top: '0px', bottom: 'auto', right: '0px' })
+
+const isSuperAdmin = computed(() => sessionStorage.getItem('ck_role') === 'Super Admin')
 
 // Custom Confirmation Modals State
 const resetPasswordModal = ref({ show: false, user: null, status: 'confirm', errorMessage: '' })

@@ -117,20 +117,30 @@ import {
   Lock as LockIcon,
   Unlock as UnlockIcon,
   LogOut as LogOutIcon,
-  RefreshCw as RefreshCwIcon
+  RefreshCw as RefreshCwIcon,
+  ShieldAlert as ShieldAlertIcon
 } from 'lucide-vue-next'
 import { adminLogout } from '../services/api.js'
 
 const route = useRoute()
 const router = useRouter() // Initialize router
+const isSuperAdmin = computed(() => sessionStorage.getItem('ck_role') === 'Super Admin')
 
-const navItems = [
-  { name: 'Overview', icon: LayoutDashboard, to: '/dashboard', routeName: 'Overview' },
-  { name: 'User Management', icon: Users, to: '/dashboard/user-management', routeName: 'UserManagement' },
-  { name: 'Food Database', icon: Database, to: '/dashboard/food-database', routeName: 'FoodDatabase' },
-  { name: 'Report Generator', icon: FileBarChart, to: '/dashboard/report-generator', routeName: 'ReportGenerator' },
-  { name: 'System Logs', icon: Activity, to: '/dashboard/system-logs', routeName: 'SystemLogs' }
-]
+const navItems = computed(() => {
+  const items = [
+    { name: 'Overview', icon: LayoutDashboard, to: '/dashboard', routeName: 'Overview' },
+    { name: 'User Management', icon: Users, to: '/dashboard/user-management', routeName: 'UserManagement' },
+    { name: 'Food Database', icon: Database, to: '/dashboard/food-database', routeName: 'FoodDatabase' },
+    { name: 'Report Generator', icon: FileBarChart, to: '/dashboard/report-generator', routeName: 'ReportGenerator' },
+    { name: 'System Logs', icon: Activity, to: '/dashboard/system-logs', routeName: 'SystemLogs' }
+  ]
+  
+  if (isSuperAdmin.value) {
+    items.splice(4, 0, { name: 'Admin Management', icon: ShieldAlertIcon, to: '/dashboard/admins', routeName: 'AdminManagement' })
+  }
+  
+  return items
+})
 const isActive = (routeName) => route.name === routeName
 
 const pageTitle = computed(() => {

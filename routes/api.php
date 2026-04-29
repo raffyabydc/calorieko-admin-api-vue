@@ -137,4 +137,10 @@ Route::get('/health', function () {
             'at_rest' => true // Since we have enabled model casts
         ]
     ]);
+    // ── Admin & Moderator Management (Super Admin Only) ──
+    Route::get('/moderators', [App\Http\Controllers\Api\AdminManagementController::class, 'index']);
+    Route::post('/moderators', [App\Http\Controllers\Api\AdminManagementController::class, 'store']);
+    Route::put('/moderators/{id}/toggle', [App\Http\Controllers\Api\AdminManagementController::class, 'toggle']);
+    Route::delete('/moderators/{id}', [App\Http\Controllers\Api\AdminManagementController::class, 'destroy']);
+    
 });

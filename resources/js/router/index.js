@@ -43,6 +43,12 @@ const routes = [
                 name: 'UserAnalytics',
                 component: () => import('../views/UserAnalyticsView.vue'),
                 props: true
+            },
+            {
+                path: 'admins',
+                name: 'AdminManagement',
+                component: () => import('../views/AdminManagementView.vue'),
+                meta: { requiresSuperAdmin: true }
             }
         ]
     }
@@ -56,9 +62,12 @@ const router = createRouter({
 // Navigation guard for auth simulation
 router.beforeEach((to, from, next) => {
     const isLoggedIn = sessionStorage.getItem('ck_logged_in') === 'true'
+    const role = sessionStorage.getItem('ck_role')
 
     if (to.meta.requiresAuth && !isLoggedIn) {
         next({ name: 'Login' })
+    } else if (to.meta.requiresSuperAdmin && role !== 'Super Admin') {
+        next({ name: 'Overview' }) // Redirect moderators away from restricted pages
     } else if (to.name === 'Login' && isLoggedIn) {
         next({ name: 'Overview' })
     } else {
