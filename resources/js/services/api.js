@@ -258,22 +258,25 @@ export async function getWeeklyReport(uid, startDate, endDate) {
 // ═══════════════════════════════════════════════════════════════
 
 export async function getModerators() {
-  const res = await api.get('/admin/moderators')
-  return res.data
+  return fetchJSON('/admin/moderators')
 }
 
 export async function createModerator(data) {
-  const res = await api.post('/admin/moderators', data)
-  return res.data
+  return fetchJSON('/admin/moderators', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  })
 }
 
 export async function toggleModerator(id) {
-  const res = await api.put(`/admin/moderators/${id}/toggle`)
-  return res.data
+  return fetchJSON(`/admin/moderators/${id}/toggle`, {
+    method: 'PUT'
+  })
 }
 
 export async function deleteModerator(id) {
-  const res = await api.delete(`/admin/moderators/${id}`)
-  return res.data
+  return fetchJSON(`/admin/moderators/${id}`, {
+    method: 'DELETE'
+  })
 }
 

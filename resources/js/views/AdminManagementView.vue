@@ -102,7 +102,7 @@
               </div>
               
               <div class="form-group">
-                <label class="form-label">Temporary Password</label>
+                <label class="form-label">Initial Password</label>
                 <input v-model="form.password" type="password" class="ck-input" required minlength="8" placeholder="At least 8 characters">
               </div>
               
