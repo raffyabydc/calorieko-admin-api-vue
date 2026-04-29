@@ -23,7 +23,11 @@ class AdminAuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // Because the 'email' field is encrypted for data privacy (PII), 
+        // we cannot use a direct SQL WHERE clause. We must filter in-memory.
+        $user = User::all()->first(function ($u) use ($request) {
+            return strtolower($u->email) === strtolower($request->email);
+        });
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             SystemLog::log($request->email, 'Admin Login', null, 'Failed', $request->ip(), 'Invalid email or password.');

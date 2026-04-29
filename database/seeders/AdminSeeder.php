@@ -13,8 +13,12 @@ class AdminSeeder extends Seeder
      */
     public function run(): void
     {
-        // Check if admin exists
-        if (!User::where('email', 'admin@calorieko.ph')->exists()) {
+        // Check if admin exists (filtering in-memory because email is encrypted)
+        $exists = User::all()->contains(function ($u) {
+            return strtolower($u->email) === 'admin@calorieko.ph';
+        });
+
+        if (!$exists) {
             User::create([
                 'name' => 'System Administrator',
                 'email' => 'admin@calorieko.ph',
