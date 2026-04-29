@@ -200,7 +200,7 @@ const navItems = computed(() => {
 const isActive = (routeName) => route.name === routeName
 
 const pageTitle = computed(() => {
-  const currentNav = navItems.find(item => item.routeName === route.name)
+  const currentNav = navItems.value.find(item => item.routeName === route.name)
   if (route.name === 'Overview') return 'Admin Overview'
   if (route.name === 'UserAnalytics') return 'User Analytics'
   return currentNav?.name || 'Dashboard'
