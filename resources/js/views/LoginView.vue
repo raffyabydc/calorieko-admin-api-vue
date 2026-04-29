@@ -124,10 +124,11 @@ const handleLogin = async () => {
   try {
     const data = await adminLogin(email.value, password.value)
 
-    // Store the token and login state
+    // Store the Sanctum token, login state, and role
     sessionStorage.setItem('ck_logged_in', 'true')
     sessionStorage.setItem('ck_token', data.token)
     sessionStorage.setItem('ck_email', data.email)
+    sessionStorage.setItem('ck_role', data.role || 'Moderator')
 
     router.push({ name: 'Overview' })
   } catch (err) {

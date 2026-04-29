@@ -37,6 +37,12 @@ const routes = [
                 path: 'system-logs',
                 name: 'SystemLogs',
                 component: () => import('../views/SystemLogsView.vue')
+            },
+            {
+                path: 'user-analytics/:uid',
+                name: 'UserAnalytics',
+                component: () => import('../views/UserAnalyticsView.vue'),
+                props: true
             }
         ]
     }

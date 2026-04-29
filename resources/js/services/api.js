@@ -5,14 +5,14 @@
  * All requests go through the Vite proxy (configured in vite.config.js)
  * which forwards /api/* requests to the Laravel server on port 8000.
  *
- * All admin endpoints send the auth token from sessionStorage
- * in the Authorization header.
+ * Authentication uses Laravel Sanctum Bearer tokens stored in sessionStorage.
+ * All admin endpoints attach the token via the Authorization header.
  */
 
 const API_BASE = '/api/admin'
 
 /**
- * Returns the Authorization header with the admin token.
+ * Returns the Authorization header with the Sanctum token.
  */
 function getAuthHeaders() {
     const token = sessionStorage.getItem('ck_token')
@@ -31,6 +31,7 @@ async function authenticatedFetch(url, options = {}) {
     if (res.status === 401) {
         sessionStorage.removeItem('ck_token')
         sessionStorage.removeItem('ck_email')
+        sessionStorage.removeItem('ck_role')
         sessionStorage.removeItem('ck_logged_in')
         window.location.href = '/' // Kick user to login screen
         throw new Error('Session expired. Please log in again.')
@@ -44,6 +45,8 @@ async function fetchJSON(endpoint) {
     if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`)
     return res.json()
 }
+
+// ── Authentication ──
 
 export async function adminLogin(email, password) {
     const res = await fetch('/api/admin/login', {
@@ -63,15 +66,34 @@ export async function adminLogin(email, password) {
     return data
 }
 
-export async function verifyToken(token) {
-    const res = await fetch('/api/admin/verify', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        }
-    })
-    return res.ok
+export async function adminLogout() {
+    try {
+        await authenticatedFetch('/api/admin/logout', { method: 'POST' })
+    } catch (e) {
+        // Silently fail — we clear local state regardless
+    }
+    sessionStorage.removeItem('ck_token')
+    sessionStorage.removeItem('ck_email')
+    sessionStorage.removeItem('ck_role')
+    sessionStorage.removeItem('ck_logged_in')
+}
+
+export async function verifyToken() {
+    const token = sessionStorage.getItem('ck_token')
+    if (!token) return false
+    
+    try {
+        const res = await fetch('/api/admin/verify', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        return res.ok
+    } catch {
+        return false
+    }
 }
 
 // ── User Profiles ──
@@ -210,3 +232,23 @@ export async function getStepTrends() {
     return fetchJSON('/analytics/step-trends')
 }
 
+// ── NEW: Individual User Analytics ──
+
+export async function getCorrelation(uid, days = 30) {
+    return fetchJSON(`/analytics/correlation/${uid}?days=${days}`)
+}
+
+export async function getWeightTrend(uid, days = 90) {
+    return fetchJSON(`/analytics/weight-trend/${uid}?days=${days}`)
+}
+
+// ── NEW: Weekly Progress Reports ──
+
+export async function getWeeklyReport(uid, startDate, endDate) {
+    let url = `/reports/weekly/${uid}`
+    const params = []
+    if (startDate) params.push(`start_date=${startDate}`)
+    if (endDate) params.push(`end_date=${endDate}`)
+    if (params.length) url += '?' + params.join('&')
+    return fetchJSON(url)
+}

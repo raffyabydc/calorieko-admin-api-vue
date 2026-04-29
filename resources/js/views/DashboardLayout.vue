@@ -119,6 +119,7 @@ import {
   LogOut as LogOutIcon,
   RefreshCw as RefreshCwIcon
 } from 'lucide-vue-next'
+import { adminLogout } from '../services/api.js'
 
 const route = useRoute()
 const router = useRouter() // Initialize router
@@ -135,6 +136,7 @@ const isActive = (routeName) => route.name === routeName
 const pageTitle = computed(() => {
   const currentNav = navItems.find(item => item.routeName === route.name)
   if (route.name === 'Overview') return 'Admin Overview'
+  if (route.name === 'UserAnalytics') return 'User Analytics'
   return currentNav?.name || 'Dashboard'
 })
 
@@ -232,10 +234,8 @@ const handleLogout = () => {
   showLogoutModal.value = true
 }
 
-const confirmLogout = () => {
-  sessionStorage.removeItem('ck_logged_in')
-  sessionStorage.removeItem('ck_token')
-  sessionStorage.removeItem('ck_email')
+const confirmLogout = async () => {
+  await adminLogout()
   router.push({ name: 'Login' })
   showLogoutModal.value = false
 }

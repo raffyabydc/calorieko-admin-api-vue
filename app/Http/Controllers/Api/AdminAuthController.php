@@ -6,20 +6,15 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\SystemLog;
+use App\Models\User;
 
 /**
- * Handles admin panel authentication.
- *
- * Credentials are stored in the .env file (ADMIN_EMAIL / ADMIN_PASSWORD).
- * On success, returns a simple token that the Vue admin stores in sessionStorage.
+ * Handles admin panel authentication via Laravel Sanctum.
  */
 class AdminAuthController extends Controller
 {
     /**
      * POST /api/admin/login
-     *
-     * Validates the email/password against the .env credentials.
-     * Returns a signed token on success.
      */
     public function login(Request $request)
     {
@@ -28,60 +23,57 @@ class AdminAuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        $adminEmail    = config('app.admin_email');
-        $adminPassword = config('app.admin_password');
+        $user = User::where('email', $request->email)->first();
 
-        // Check if admin credentials are configured
-        if (empty($adminEmail) || empty($adminPassword)) {
-            return response()->json([
-                'error' => 'Admin credentials not configured on the server.'
-            ], 500);
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            SystemLog::log($request->email, 'Admin Login', null, 'Failed', $request->ip(), 'Invalid email or password.');
+            return response()->json(['error' => 'Invalid email or password.'], 401);
         }
 
-        // Validate credentials
-        if (
-            strtolower($request->email) === strtolower($adminEmail) &&
-            $request->password === $adminPassword
-        ) {
-            // Generate a simple signed token (valid for this server session)
-            $token = hash('sha256', $adminEmail . '|' . config('app.key') . '|' . now()->toDateString());
-
-            SystemLog::log($adminEmail, 'Admin Login', null, 'Success', $request->ip(), 'Admin logged in successfully.');
-
-            return response()->json([
-                'message' => 'Login successful',
-                'token'   => $token,
-                'email'   => $adminEmail,
-            ]);
+        if (!$user->is_active) {
+            SystemLog::log($request->email, 'Admin Login', null, 'Failed', $request->ip(), 'Account deactivated.');
+            return response()->json(['error' => 'Your account has been deactivated.'], 403);
         }
 
-        SystemLog::log($request->email, 'Admin Login', null, 'Failed', $request->ip(), 'Invalid email or password.');
+        // Generate Sanctum token
+        $token = $user->createToken('admin-token')->plainTextToken;
+
+        SystemLog::log($user->email, 'Admin Login', null, 'Success', $request->ip(), 'Admin logged in successfully.');
 
         return response()->json([
-            'error' => 'Invalid email or password.'
-        ], 401);
+            'message' => 'Login successful',
+            'token'   => $token,
+            'email'   => $user->email,
+            'role'    => $user->role,
+        ]);
+    }
+
+    /**
+     * POST /api/admin/logout
+     */
+    public function logout(Request $request)
+    {
+        $user = $request->user();
+        if ($user) {
+            $user->currentAccessToken()->delete();
+            SystemLog::log($user->email, 'Admin Logout', null, 'Success', $request->ip(), 'Admin logged out.');
+        }
+
+        return response()->json(['message' => 'Logged out successfully']);
     }
 
     /**
      * POST /api/admin/verify
-     *
-     * Verifies if the stored token is still valid.
      */
     public function verify(Request $request)
     {
-        $token = $request->bearerToken() ?? $request->input('token');
-
-        if (empty($token)) {
-            return response()->json(['valid' => false], 401);
-        }
-
-        $adminEmail = config('app.admin_email');
-        $expectedToken = hash('sha256', $adminEmail . '|' . config('app.key') . '|' . now()->toDateString());
-
-        if ($token === $expectedToken) {
-            return response()->json(['valid' => true, 'email' => $adminEmail]);
-        }
-
-        return response()->json(['valid' => false], 401);
+        // Handled by Sanctum middleware. If we reach here, it's valid.
+        $user = $request->user();
+        
+        return response()->json([
+            'valid' => true, 
+            'email' => $user->email,
+            'role'  => $user->role
+        ]);
     }
 }

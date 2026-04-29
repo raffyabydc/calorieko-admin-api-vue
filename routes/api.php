@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\DailyNutritionSummaryController;
 use App\Http\Controllers\Api\AdminAuthController;
 use App\Http\Controllers\Api\SystemLogController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\AnalyticsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -23,16 +24,23 @@ use App\Http\Controllers\Api\DashboardController;
 |   POST /api/sync/activity-log/batch
 |   POST /api/sync/meal-log
 |   POST /api/sync/nutrition-summary
+|   POST /api/sync/weight-log        ← NEW: Historical weight tracking
 |
 | Admin auth endpoints (public):
 |   POST /api/admin/login
-|   POST /api/admin/verify
 |
-| Admin endpoints (require admin.auth):
+| Admin auth endpoints (Sanctum-protected):
+|   POST /api/admin/verify
+|   POST /api/admin/logout
+|
+| Admin endpoints (require sanctum + admin.auth):
 |   GET  /api/admin/dashboard/stats
 |   GET  /api/admin/analytics/nutrition-trends
 |   GET  /api/admin/analytics/top-dishes
 |   GET  /api/admin/analytics/user-consistency
+|   GET  /api/admin/analytics/correlation/{uid}     ← NEW
+|   GET  /api/admin/analytics/weight-trend/{uid}    ← NEW
+|   GET  /api/admin/reports/weekly/{uid}             ← NEW
 |   ...CRUD endpoints for profiles, foods, activity-logs, etc.
 |
 */
@@ -50,15 +58,21 @@ Route::prefix('sync')
         Route::post('/activity-log/batch',[ActivityLogController::class, 'syncBatch']);
         Route::post('/meal-log',          [MealLogController::class, 'sync']);
         Route::post('/nutrition-summary', [DailyNutritionSummaryController::class, 'sync']);
+        Route::post('/weight-log',        [AnalyticsController::class, 'syncWeightLog']);
     });
 
 // ── Admin Auth Endpoints (public — no middleware) ──
-Route::post('/admin/login',  [AdminAuthController::class, 'login']);
-Route::post('/admin/verify', [AdminAuthController::class, 'verify']);
+Route::post('/admin/login', [AdminAuthController::class, 'login']);
 
-// ── Admin Endpoints (secured with admin.auth middleware) ──
+// ── Admin Auth Endpoints (Sanctum-protected, no role check) ──
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/admin/verify',  [AdminAuthController::class, 'verify']);
+    Route::post('/admin/logout',  [AdminAuthController::class, 'logout']);
+});
+
+// ── Admin Endpoints (secured with Sanctum + admin.auth middleware) ──
 Route::prefix('admin')
-    ->middleware('admin.auth')
+    ->middleware(['auth:sanctum', 'admin.auth'])
     ->group(function () {
 
     // ── Dashboard KPI Stats ──
@@ -69,6 +83,13 @@ Route::prefix('admin')
     Route::get('/analytics/step-trends',       [DashboardController::class, 'stepTrends']);
     Route::get('/analytics/top-dishes',        [DashboardController::class, 'topDishes']);
     Route::get('/analytics/user-consistency',  [DashboardController::class, 'userConsistency']);
+
+    // ── NEW: Individual User Analytics ──
+    Route::get('/analytics/correlation/{uid}',  [AnalyticsController::class, 'correlation']);
+    Route::get('/analytics/weight-trend/{uid}', [AnalyticsController::class, 'weightTrend']);
+
+    // ── NEW: Weekly Progress Reports ──
+    Route::get('/reports/weekly/{uid}',         [AnalyticsController::class, 'weeklyReport']);
 
     // ── User Profiles ──
     Route::get('/profiles',                     [UserProfileController::class, 'index']);

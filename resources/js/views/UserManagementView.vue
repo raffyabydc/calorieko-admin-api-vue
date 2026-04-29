@@ -381,6 +381,9 @@
           <button class="dropdown-item" @click="showDetail(selectedUserForMenu); activeMenu = null">
             <EyeIcon :size="14" /> View Details
           </button>
+          <button class="dropdown-item dropdown-item--analytics" @click="viewAnalytics(selectedUserForMenu); activeMenu = null">
+            <BarChart2Icon :size="14" /> View Analytics
+          </button>
           <button class="dropdown-item" @click="resetPassword(selectedUserForMenu); activeMenu = null">
             <KeyIcon :size="14" /> Reset Password
           </button>
@@ -401,6 +404,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   Search as SearchIcon,
   Eye as EyeIcon,
@@ -411,8 +415,11 @@ import {
   MoreVertical as MoreVerticalIcon,
   Key as KeyIcon,
   Trash as TrashIcon,
-  XCircle as XCircleIcon
+  XCircle as XCircleIcon,
+  BarChart2 as BarChart2Icon
 } from 'lucide-vue-next'
+
+const router = useRouter()
 
 // State Management
 const searchQuery = ref('')
@@ -488,6 +495,10 @@ const consistencyColor = (c) => c >= 80 ? '#10b981' : c >= 60 ? '#f59e0b' : '#ef
 
 const showDetail = (p) => { 
   selectedParticipant.value = p 
+}
+
+const viewAnalytics = (p) => {
+  router.push({ name: 'UserAnalytics', params: { uid: p.uid } })
 }
 
 const showLogs = async (p) => {
