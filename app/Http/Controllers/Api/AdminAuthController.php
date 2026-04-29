@@ -18,6 +18,8 @@ class AdminAuthController extends Controller
      */
     public function login(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('Login attempt', ['email' => $request->email]);
+        
         $request->validate([
             'email'    => 'required|email',
             'password' => 'required|string',
@@ -26,8 +28,15 @@ class AdminAuthController extends Controller
         // Because the 'email' field is encrypted for data privacy (PII), 
         // we cannot use a direct SQL WHERE clause. We must filter in-memory.
         $user = User::all()->first(function ($u) use ($request) {
-            return strtolower($u->email) === strtolower($request->email);
+            return trim(strtolower($u->email)) === trim(strtolower($request->email));
         });
+
+        \Illuminate\Support\Facades\Log::info('User found?', ['found' => $user !== null]);
+
+        if ($user) {
+            $pwMatch = Hash::check($request->password, $user->password);
+            \Illuminate\Support\Facades\Log::info('Password match?', ['match' => $pwMatch]);
+        }
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             SystemLog::log($request->email, 'Admin Login', null, 'Failed', $request->ip(), 'Invalid email or password.');
