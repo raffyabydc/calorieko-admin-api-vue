@@ -139,6 +139,26 @@ const loadPreview = async () => {
 onMounted(() => loadPreview())
 watch(selectedType, () => loadPreview())
 
+// Format date strings to a readable locale format
+const formatDate = (val) => {
+  if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
+    const date = new Date(val)
+    if (!isNaN(date.getTime())) {
+      return date.toLocaleString('en-PH', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: 'Asia/Manila'
+      })
+    }
+  }
+  return val
+}
+
 // Format cell values for display
 const formatCellValue = (val) => {
   if (val === null || val === undefined) return '—'
@@ -151,7 +171,7 @@ const formatCellValue = (val) => {
     }).join(', ')
   }
   if (typeof val === 'object') return JSON.stringify(val)
-  return String(val)
+  return String(formatDate(val))
 }
 
 // CSV Export Logic
@@ -187,7 +207,7 @@ const exportCSV = async () => {
     const headers = Object.keys(data[0]).join(',')
     const rows = data.map(obj =>
       Object.values(obj).map(val => {
-        let str = val !== null && val !== undefined ? (typeof val === 'object' ? JSON.stringify(val) : String(val)) : ''
+        let str = val !== null && val !== undefined ? (typeof val === 'object' ? JSON.stringify(val) : String(formatDate(val))) : ''
         // Escape quotes and commas
         if (str.includes(',') || str.includes('"') || str.includes('\n')) {
           str = `"${str.replace(/"/g, '""')}"`
@@ -263,7 +283,7 @@ const exportPDF = async () => {
           return val.map(item => item.dish_name || item.name || JSON.stringify(item)).join(', ')
         }
         if (typeof val === 'object') return JSON.stringify(val)
-        return String(val)
+        return String(formatDate(val))
       })
     )
 
