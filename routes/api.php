@@ -120,6 +120,14 @@ Route::prefix('admin')
 
     // ── System Logs ──
     Route::get('/system-logs',              [SystemLogController::class, 'index']);
+    // ── Admin & Moderator Management (Super Admin Only) ──
+    Route::get('/moderators', [App\Http\Controllers\Api\AdminManagementController::class, 'index']);
+    Route::post('/moderators', [App\Http\Controllers\Api\AdminManagementController::class, 'store']);
+    Route::put('/moderators/{id}/toggle', [App\Http\Controllers\Api\AdminManagementController::class, 'toggle']);
+    Route::delete('/moderators/{id}', [App\Http\Controllers\Api\AdminManagementController::class, 'destroy']);
+    
+    // ── Self-Service Admin Actions ──
+    Route::put('/password', [App\Http\Controllers\Api\AdminAuthController::class, 'updatePassword']);
 });
 
 // Health check with encryption verification
@@ -137,12 +145,4 @@ Route::get('/health', function () {
             'at_rest' => true // Since we have enabled model casts
         ]
     ]);
-    // ── Admin & Moderator Management (Super Admin Only) ──
-    Route::get('/moderators', [App\Http\Controllers\Api\AdminManagementController::class, 'index']);
-    Route::post('/moderators', [App\Http\Controllers\Api\AdminManagementController::class, 'store']);
-    Route::put('/moderators/{id}/toggle', [App\Http\Controllers\Api\AdminManagementController::class, 'toggle']);
-    Route::delete('/moderators/{id}', [App\Http\Controllers\Api\AdminManagementController::class, 'destroy']);
-    
-    // ── Self-Service Admin Actions ──
-    Route::put('/password', [App\Http\Controllers\Api\AdminAuthController::class, 'updatePassword']);
 });

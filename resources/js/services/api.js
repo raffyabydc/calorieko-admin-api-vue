@@ -24,7 +24,11 @@ function getAuthHeaders() {
  * globally and forcefully logs out the user.
  */
 async function authenticatedFetch(url, options = {}) {
-    const headers = { ...getAuthHeaders(), ...(options.headers || {}) }
+    const headers = { 
+        'Accept': 'application/json',
+        ...getAuthHeaders(), 
+        ...(options.headers || {}) 
+    }
     const res = await fetch(url, { ...options, headers })
     
     // Auto-logout security wall
@@ -40,10 +44,34 @@ async function authenticatedFetch(url, options = {}) {
     return res
 }
 
-async function fetchJSON(endpoint) {
-    const res = await authenticatedFetch(`${API_BASE}${endpoint}`)
-    if (!res.ok) throw new Error(`API error: ${res.status} ${res.statusText}`)
-    return res.json()
+async function fetchJSON(endpoint, options = {}) {
+    // Auto-set Content-Type if we have a body and it's not FormData
+    if (options.body && !(options.body instanceof FormData)) {
+        options.headers = { 
+            'Content-Type': 'application/json',
+            ...(options.headers || {}) 
+        }
+    }
+
+    const res = await authenticatedFetch(`${API_BASE}${endpoint}`, options)
+    
+    // Check if response is actually JSON
+    const contentType = res.headers.get('content-type') || ''
+    if (!contentType.includes('application/json')) {
+        // Capture a snippet of the response for debugging (e.g. 404/500 HTML)
+        const text = (await res.text()).trim().slice(0, 120)
+        const isHTML = text.startsWith('<!DOCTYPE') || text.startsWith('<html')
+        
+        if (isHTML) {
+            throw new Error('The admin API returned HTML instead of JSON. Please sign in again or check the backend route/middleware configuration.')
+        } else {
+            throw new Error(`Unexpected non-JSON response from the admin API: ${text || res.statusText}`)
+        }
+    }
+
+    const data = await res.json()
+    if (!res.ok) throw new Error(data?.error || data?.message || `API error: ${res.status} ${res.statusText}`)
+    return data
 }
 
 // ── Authentication ──
@@ -258,24 +286,24 @@ export async function getWeeklyReport(uid, startDate, endDate) {
 // ═══════════════════════════════════════════════════════════════
 
 export async function getModerators() {
-  return fetchJSON('/admin/moderators')
+  return fetchJSON('/moderators')
 }
 
 export async function createModerator(data) {
-  return fetchJSON('/admin/moderators', {
+  return fetchJSON('/moderators', {
     method: 'POST',
     body: JSON.stringify(data)
   })
 }
 
 export async function toggleModerator(id) {
-  return fetchJSON(`/admin/moderators/${id}/toggle`, {
+  return fetchJSON(`/moderators/${id}/toggle`, {
     method: 'PUT'
   })
 }
 
 export async function deleteModerator(id) {
-  return fetchJSON(`/admin/moderators/${id}`, {
+  return fetchJSON(`/moderators/${id}`, {
     method: 'DELETE'
   })
 }
@@ -285,7 +313,7 @@ export async function deleteModerator(id) {
 // ═══════════════════════════════════════════════════════════════
 
 export async function updateAdminPassword(data) {
-  return fetchJSON('/admin/password', {
+  return fetchJSON('/password', {
     method: 'PUT',
     body: JSON.stringify(data)
   })
