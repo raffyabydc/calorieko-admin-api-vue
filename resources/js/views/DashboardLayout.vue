@@ -59,10 +59,6 @@
       <header class="topbar">
         <div class="topbar__left">
           <h1 class="topbar__title">{{ pageTitle }}</h1>
-          <div class="topbar__location">
-            <MapPinIcon class="topbar__location-icon" />
-            <span>Node Location: {{ nodeLocation }}</span>
-          </div>
           <!-- Rule 3: Differentiated Labelling & Iconography (Global) -->
           <button class="topbar__global-refresh" @click="forceRefresh" :disabled="isRefreshing" title="Reload Dashboard">
             <RefreshCwIcon class="topbar__refresh-icon" :class="{ 'topbar__refresh-icon--spinning': isRefreshing }" />
@@ -167,7 +163,6 @@ import {
   FileBarChart,
   Activity,
   Database,
-  MapPin as MapPinIcon,
   Lock as LockIcon,
   Unlock as UnlockIcon,
   LogOut as LogOutIcon,
@@ -205,9 +200,7 @@ const pageTitle = computed(() => {
   if (route.name === 'UserAnalytics') return 'User Analytics'
   return currentNav?.name || 'Dashboard'
 })
-
 const showLogoutModal = ref(false)
-const nodeLocation = ref('Determining Node Network...')
 const isEncrypted = ref(true)
 
 // Password Modal State
@@ -284,56 +277,7 @@ onMounted(() => {
 
   verifyEncryption()
 
-  const fetchFallbackIPLocation = async () => {
-    try {
-      const response = await fetch('https://ipapi.co/json/')
-      const data = await response.json()
-      if (data.city && (data.region || data.country_name)) {
-        nodeLocation.value = `${data.city}, ${data.region || data.country_name} (Approx)`
-      } else {
-        nodeLocation.value = 'Tagum City, Davao'
-      }
-    } catch (error) {
-      console.error('Failed to pinpoint node location via IP:', error)
-      nodeLocation.value = 'Tagum City, Davao' // Final fallback
-    }
-  }
-
-  const fetchPreciseLocation = async (lat, lon) => {
-    try {
-      // Using OpenStreetMap's free Nominatim reverse geocoding API
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
-      const data = await response.json()
-      
-      if (data && data.address) {
-        const address = data.address
-        const city = address.city || address.town || address.municipality || address.county || 'Unknown City'
-        const region = address.state || address.region || 'Philippines'
-        nodeLocation.value = `${city}, ${region}`
-      } else {
-        fetchFallbackIPLocation()
-      }
-    } catch (err) {
-      console.error('Reverse geocoding failed:', err)
-      fetchFallbackIPLocation()
-    }
-  }
-
-  // Attempt to use Geolocation API for real hardware location instead of ISP routing hubs
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        fetchPreciseLocation(position.coords.latitude, position.coords.longitude)
-      },
-      (error) => {
-        console.warn('Precise geolocation failed or was denied. Falling back to IP estimation.', error)
-        fetchFallbackIPLocation()
-      },
-      { timeout: 10000 }
-    )
-  } else {
-    fetchFallbackIPLocation()
-  }
+  verifyEncryption()
 })
 
 // Add Logout Function
@@ -510,19 +454,6 @@ const cancelLogout = () => {
   font-size: 1.25rem;
   font-weight: 600;
   color: var(--ck-gray-900);
-}
-
-.topbar__location {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  color: var(--ck-gray-600);
-}
-
-.topbar__location-icon {
-  width: 1rem;
-  height: 1rem;
 }
 
 .topbar__encryption {
