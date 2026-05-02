@@ -14,7 +14,7 @@
         </div>
         <div v-else-if="previewData.length > 0">
             <div class="table-wrapper" style="overflow-x: auto; max-height: 400px;">
-              <table class="ck-table" style="font-size: 0.75rem; white-space: nowrap;">
+              <table class="ck-table" style="font-size: 0.75rem;">
                 <thead>
                   <tr>
                     <th v-for="h in previewHeaders" :key="h">{{ h }}</th>
@@ -22,8 +22,21 @@
                 </thead>
                 <tbody>
                   <tr v-for="(row, idx) in previewData" :key="idx">
-                    <td v-for="(val, colIdx) in Object.values(row)" :key="colIdx">
-                      {{ formatCellValue(val) }}
+                    <td v-for="header in previewHeaders" :key="header">
+                      <template v-if="header === 'uid'">
+                        <span :title="row[header]" class="font-mono" style="cursor: help;">
+                          {{ truncateUid(row[header]) }}
+                        </span>
+                      </template>
+                      <template v-else-if="['is_active', 'is_engaged', 'has_recent_activity'].includes(header)">
+                        <div class="boolean-badge" :class="row[header] ? 'boolean-badge--true' : 'boolean-badge--false'">
+                          <span class="ck-dot" :class="row[header] ? 'ck-dot--green' : 'ck-dot--gray'"></span>
+                          <span>{{ row[header] ? 'True' : 'False' }}</span>
+                        </div>
+                      </template>
+                      <template v-else>
+                        {{ formatCellValue(row[header], header) }}
+                      </template>
                     </td>
                   </tr>
                 </tbody>
@@ -139,28 +152,81 @@ const loadPreview = async () => {
 onMounted(() => loadPreview())
 watch(selectedType, () => loadPreview())
 
-// Format date strings to a readable locale format
-const formatDate = (val) => {
+// Format date strings or epoch timestamps to YYYY-MM-DD HH:mm
+// Uses the key name to avoid accidentally formatting non-date numbers (like age or calories)
+const formatDate = (val, key = '') => {
+  if (!val) return val
+  let date = null
+  const sVal = String(val)
+  const isDateKey = /date|time|updated|created/i.test(key)
+
   if (typeof val === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(val)) {
-    const date = new Date(val)
-    if (!isNaN(date.getTime())) {
-      return date.toLocaleString('en-PH', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-        timeZone: 'Asia/Manila'
-      })
+    date = new Date(val)
+  } else if (isDateKey && /^\d+$/.test(sVal)) {
+    const num = Number(val)
+    if (key === 'date_epoch_day') {
+       date = new Date(num * 86400 * 1000)
+    } else if (num > 1e9) { // At least 10 digits for epoch seconds
+       date = new Date(num > 1e11 ? num : num * 1000)
     }
+  }
+
+  if (date && !isNaN(date.getTime())) {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    const hh = String(date.getHours()).padStart(2, '0')
+    const mm = String(date.getMinutes()).padStart(2, '0')
+    return `${y}-${m}-${d} ${hh}:${mm}`
   }
   return val
 }
 
+// Truncate long UID strings for display (e.g. deK24...vr2)
+const truncateUid = (uid) => {
+  if (!uid || typeof uid !== 'string') return uid
+  if (uid.length <= 10) return uid
+  return `${uid.slice(0, 5)}...${uid.slice(-3)}`
+}
+
+// PDF Column Whitelist & Labels for better readability
+const pdfColumnConfig = {
+  profiles: ['uid', 'display_id', 'age', 'sex', 'weight', 'height', 'activityLevel', 'goal', 'is_active'],
+  nutrition: ['uid', 'date_epoch_day', 'total_calories', 'total_protein', 'total_carbs', 'total_fat', 'total_sodium'],
+  meals: ['uid', 'meal_type', 'timestamp', 'notes', 'items'],
+  activities: ['uid', 'name', 'type', 'timeString', 'weightOrDuration', 'calories', 'steps']
+}
+
+const columnLabels = {
+  uid: 'User ID',
+  display_id: 'ID',
+  age: 'Age',
+  sex: 'Sex',
+  weight: 'Weight',
+  height: 'Height',
+  activityLevel: 'Activity',
+  goal: 'Goal',
+  is_active: 'Active',
+  date_epoch_day: 'Date',
+  total_calories: 'Calories',
+  total_protein: 'Protein',
+  total_carbs: 'Carbohydrates',
+  total_fat: 'Fat',
+  total_sodium: 'Sodium',
+  meal_type: 'Meal',
+  timestamp: 'Time',
+  notes: 'Notes',
+  items: 'Items',
+  name: 'Activity Name',
+  type: 'Type',
+  timeString: 'Time',
+  weightOrDuration: 'Duration/Weight',
+  calories: 'Calories',
+  steps: 'Steps'
+}
+
 // Format cell values for display
-const formatCellValue = (val) => {
+const formatCellValue = (val, key = '') => {
   if (val === null || val === undefined) return '—'
   if (Array.isArray(val)) {
     if (val.length === 0) return '—'
@@ -171,7 +237,7 @@ const formatCellValue = (val) => {
     }).join(', ')
   }
   if (typeof val === 'object') return JSON.stringify(val)
-  return String(formatDate(val))
+  return String(formatDate(val, key))
 }
 
 // CSV Export Logic
@@ -206,8 +272,9 @@ const exportCSV = async () => {
     // Convert JSON to CSV String
     const headers = Object.keys(data[0]).join(',')
     const rows = data.map(obj =>
-      Object.values(obj).map(val => {
-        let str = val !== null && val !== undefined ? (typeof val === 'object' ? JSON.stringify(val) : String(formatDate(val))) : ''
+      Object.keys(obj).map(key => {
+        const val = obj[key]
+        let str = val !== null && val !== undefined ? (typeof val === 'object' ? JSON.stringify(val) : String(formatDate(val, key))) : ''
         // Escape quotes and commas
         if (str.includes(',') || str.includes('"') || str.includes('\n')) {
           str = `"${str.replace(/"/g, '""')}"`
@@ -273,26 +340,63 @@ const exportPDF = async () => {
     }
 
     const doc = new jsPDF('landscape')
-    doc.text(title, 14, 15)
     
-    const headers = Object.keys(data[0])
-    const rows = data.map(obj =>
-      Object.values(obj).map(val => {
-        if (val === null || val === undefined) return ''
-        if (Array.isArray(val)) {
-          return val.map(item => item.dish_name || item.name || JSON.stringify(item)).join(', ')
+    // Use whitelist to prevent column overload in PDF
+    const allowedKeys = pdfColumnConfig[selectedType.value] || (data.length > 0 ? Object.keys(data[0]) : [])
+    
+    const tableData = data.map(obj => {
+      const row = {}
+      allowedKeys.forEach(key => {
+        let val = obj[key]
+        if (val === null || val === undefined) val = ''
+        else if (key === 'uid') val = truncateUid(val)
+        else if (Array.isArray(val)) {
+          val = val.map(item => item.dish_name || item.name || JSON.stringify(item)).join(', ')
         }
-        if (typeof val === 'object') return JSON.stringify(val)
-        return String(formatDate(val))
+        else if (typeof val === 'object') val = JSON.stringify(val)
+        else val = String(formatDate(val, key))
+        row[key] = val
       })
-    )
+      return row
+    })
 
     autoTable(doc, {
-      head: [headers],
-      body: rows,
-      startY: 20,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [16, 185, 129] } // ck-primary color
+      columns: allowedKeys.map(key => ({ header: columnLabels[key] || key, dataKey: key })),
+      body: tableData,
+      startY: 40,
+      margin: { top: 35 },
+      styles: { fontSize: 7, cellPadding: 2, overflow: 'linebreak' },
+      columnStyles: {
+        uid: { cellWidth: 25 },
+        notes: { cellWidth: 'auto' },
+        items: { cellWidth: 'auto' }
+      },
+      headStyles: { fillColor: [16, 185, 129] }, // ck-primary color
+      didDrawPage: (data) => {
+        // Header
+        doc.setFontSize(18)
+        doc.setTextColor(17, 24, 39) // ck-gray-900
+        doc.setFont('helvetica', 'bold')
+        doc.text('CalorieKo Admin Dashboard', data.settings.margin.left, 15)
+
+        doc.setFontSize(10)
+        doc.setFont('helvetica', 'normal')
+        doc.setTextColor(75, 85, 99) // ck-gray-600
+        doc.text(`${title} Report`, data.settings.margin.left, 22)
+        doc.text(`Generated on: ${new Date().toLocaleString()}`, data.settings.margin.left, 28)
+
+        // Subtle horizontal line
+        doc.setDrawColor(229, 231, 235) // ck-gray-200
+        doc.line(data.settings.margin.left, 32, doc.internal.pageSize.width - data.settings.margin.left, 32)
+
+        // Footer
+        const str = 'Page ' + doc.internal.getNumberOfPages()
+        doc.setFontSize(8)
+        doc.setTextColor(156, 163, 175) // ck-gray-400
+        const pageSize = doc.internal.pageSize
+        const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight()
+        doc.text(str, data.settings.margin.left, pageHeight - 10)
+      }
     })
     
     doc.save(filename)
@@ -358,6 +462,37 @@ const exportPDF = async () => {
 .table-wrapper {
   background: var(--ck-gray-50); border: 1px solid var(--ck-gray-200);
   border-radius: var(--ck-radius-lg); overflow: hidden;
+}
+
+.ck-table th, .ck-table td {
+  white-space: nowrap;
+}
+
+.ck-dot--gray {
+  background: var(--ck-gray-400);
+}
+
+.boolean-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--ck-radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.boolean-badge--true {
+  background: var(--ck-primary-light);
+  color: var(--ck-primary);
+  border-color: var(--ck-primary-border);
+}
+
+.boolean-badge--false {
+  background: var(--ck-gray-100);
+  color: var(--ck-gray-500);
+  border-color: var(--ck-gray-200);
 }
 
 .preview-note {
