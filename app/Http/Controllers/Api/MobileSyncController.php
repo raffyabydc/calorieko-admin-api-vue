@@ -434,4 +434,41 @@ class MobileSyncController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Returns the full food catalog for mobile sync.
+     *
+     * The mobile app calls this endpoint to pull admin-managed food data
+     * and perform a full-replace sync of the local Room FOOD_TABLE.
+     * This enables researchers to add/edit dishes in the admin panel
+     * and have changes propagate to mobile apps asynchronously.
+     *
+     * Endpoint: GET /api/sync/foods/catalog
+     * Auth: Firebase ID token (Bearer) — validated by middleware
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getFoodCatalog(Request $request)
+    {
+        $foods = DB::table('FOOD_TABLE')
+            ->select([
+                'food_id', 'name_en', 'name_ph', 'category', 'ml_label',
+                'calories_per_100g', 'protein_per_100g', 'carbs_per_100g',
+                'fiber_per_100g', 'sugar_per_100g', 'fat_per_100g',
+                'saturated_fat_per_100g', 'polyunsaturated_fat_per_100g',
+                'monounsaturated_fat_per_100g', 'trans_fat_per_100g',
+                'cholesterol_per_100g', 'sodium_per_100g', 'potassium_per_100g',
+                'vitamin_a_per_100g', 'vitamin_c_per_100g',
+                'calcium_per_100g', 'iron_per_100g', 'data_source'
+            ])
+            ->get();
+
+        return response()->json([
+            'success'          => true,
+            'foods'            => $foods,
+            'count'            => $foods->count(),
+            'server_timestamp' => (int)(microtime(true) * 1000),
+        ]);
+    }
 }

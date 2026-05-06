@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\AnalyticsController;
 |   POST /api/sync/meal-log
 |   POST /api/sync/nutrition-summary
 |   POST /api/sync/weight-log        ← NEW: Historical weight tracking
+|   GET  /api/sync/foods/catalog     ← Food catalog pull (server → mobile)
 |
 | Admin auth endpoints (public):
 |   POST /api/admin/login
@@ -59,6 +60,9 @@ Route::prefix('sync')
         Route::post('/meal-log',          [MealLogController::class, 'sync']);
         Route::post('/nutrition-summary', [DailyNutritionSummaryController::class, 'sync']);
         Route::post('/weight-log',        [AnalyticsController::class, 'syncWeightLog']);
+
+        // Food catalog pull (server → mobile full-replace sync)
+        Route::get('/foods/catalog',      [\App\Http\Controllers\Api\MobileSyncController::class, 'getFoodCatalog']);
     });
 
 // ── Admin Auth Endpoints (public — no middleware) ──
