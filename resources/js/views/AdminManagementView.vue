@@ -79,7 +79,7 @@
 
     <!-- Add Moderator Modal -->
     <Teleport to="body">
-      <div v-if="showAddModal" class="ck-overlay" @click.self="closeAddModal">
+      <div v-if="showAddModal" class="ck-overlay">
         <div class="modal animate-fade-in" style="max-width: 450px;">
           <div class="modal__header">
             <h3>Add New Moderator</h3>
@@ -181,6 +181,9 @@ const fetchAdmins = async () => {
 }
 
 const closeAddModal = () => {
+  if ((form.value.name || form.value.email || form.value.password) && !confirm('You have unsaved changes. Are you sure you want to discard them?')) {
+    return
+  }
   showAddModal.value = false
   form.value = { name: '', email: '', password: '' }
   formError.value = null

@@ -127,7 +127,7 @@
 
     <!-- Add/Edit Modal (Full Nutrient Profile) -->
     <Teleport to="body">
-      <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
+      <div v-if="showModal" class="modal-overlay">
         <div class="modal animate-fade-in" style="max-width: 640px; max-height: 90vh; display: flex; flex-direction: column;">
           <div class="modal__header">
             <h3>{{ isEditMode ? 'Edit Food Item' : 'Add New Food Item' }}</h3>
@@ -279,7 +279,7 @@
 
     <!-- Bulk Import Modal -->
     <Teleport to="body">
-      <div v-if="showImportModal" class="modal-overlay" @click.self="closeImportModal">
+      <div v-if="showImportModal" class="modal-overlay">
         <div class="modal animate-fade-in" style="max-width: 520px;">
           <div class="modal__header">
             <h3>Bulk Import Food Items (CSV)</h3>
@@ -476,19 +476,36 @@ const sourceClass = (source) => {
 }
 
 // Add/Edit Triggers
+// Keep a snapshot of the original form state so we can detect unsaved changes
+const originalFormData = ref(emptyFormData())
+
 const openAddModal = () => {
   isEditMode.value = false
   formData.value = emptyFormData()
+  originalFormData.value = emptyFormData()
   showModal.value = true
 }
 
 const openEditModal = (item) => {
   isEditMode.value = true
   formData.value = { ...item }
+  originalFormData.value = { ...item }
   showModal.value = true
 }
 
+const hasUnsavedChanges = () => {
+  const empty = emptyFormData()
+  // In edit mode, compare against the original item; in add mode, compare against empty defaults
+  const baseline = isEditMode.value ? originalFormData.value : empty
+  return Object.keys(empty).some(key => {
+    return String(formData.value[key] ?? '') !== String(baseline[key] ?? '')
+  })
+}
+
 const closeModal = () => {
+  if (hasUnsavedChanges() && !confirm('You have unsaved changes. Are you sure you want to discard them?')) {
+    return
+  }
   showModal.value = false
 }
 
@@ -500,6 +517,9 @@ const openImportModal = () => {
 }
 
 const closeImportModal = () => {
+  if (importFile.value && !importResult.value && !confirm('You have a file selected. Are you sure you want to close?')) {
+    return
+  }
   showImportModal.value = false
   importFile.value = null
   importResult.value = null

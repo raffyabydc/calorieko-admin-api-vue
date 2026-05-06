@@ -105,7 +105,7 @@
   </div>
 
   <!-- Change Password Modal -->
-  <div v-if="showPasswordModal" class="modal-overlay" @click.self="closePasswordModal">
+  <div v-if="showPasswordModal" class="modal-overlay">
     <div class="modal animate-fade-in" style="max-width: 450px;">
       <div class="modal__header">
         <h3>Change Admin Password</h3>
