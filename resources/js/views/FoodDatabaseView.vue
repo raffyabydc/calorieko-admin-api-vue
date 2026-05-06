@@ -583,7 +583,7 @@ const submitForm = async () => {
       foods.value.push(created)
       showToast("Food item created successfully.")
     }
-    closeModal()
+    showModal.value = false
   } catch (err) {
     showToast(err.message || "An error occurred while saving the food item.", 'error')
     console.error(err)
