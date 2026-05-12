@@ -109,21 +109,30 @@ class AnalyticsController extends Controller
      */
     public function weightTrend(string $uid, Request $request): JsonResponse
     {
-        $days = min((int) $request->query('days', 90), 365);
-        $sinceMs = (Carbon::now()->subDays($days)->timestamp) * 1000;
+        $days = min(max((int) $request->query('days', 90), 1), 365);
+        $start = Carbon::now()->subDays($days - 1)->startOfDay();
+        $end = Carbon::now()->endOfDay();
+        $sinceMs = $start->timestamp * 1000;
+        $untilMs = $end->timestamp * 1000;
 
         $logs = WeightLog::where('uid', $uid)
             ->where('recorded_at', '>=', $sinceMs)
+            ->where('recorded_at', '<=', $untilMs)
             ->orderBy('recorded_at', 'asc')
             ->get();
 
         $labels  = [];
         $weights = [];
+        $points  = [];
 
         foreach ($logs as $log) {
             $date = Carbon::createFromTimestampMs($log->recorded_at);
             $labels[]  = $date->format('M d');
             $weights[] = round($log->weight, 1);
+            $points[] = [
+                'x' => (int) $log->recorded_at,
+                'y' => round($log->weight, 1),
+            ];
         }
 
         // Include current profile weight as latest point if no recent logs
@@ -132,15 +141,22 @@ class AnalyticsController extends Controller
             if ($profile && $profile->weight) {
                 $labels[]  = Carbon::now()->format('M d');
                 $weights[] = round($profile->weight, 1);
+                $points[] = [
+                    'x' => Carbon::now()->timestamp * 1000,
+                    'y' => round($profile->weight, 1),
+                ];
             }
         }
 
         return response()->json([
-            'uid'     => $uid,
-            'days'    => $days,
-            'labels'  => $labels,
-            'weights' => $weights,
-            'count'   => count($weights),
+            'uid'       => $uid,
+            'days'      => $days,
+            'start_ms'  => $sinceMs,
+            'end_ms'    => $untilMs,
+            'labels'    => $labels,
+            'weights'   => $weights,
+            'points'    => $points,
+            'count'     => count($weights),
         ]);
     }
 

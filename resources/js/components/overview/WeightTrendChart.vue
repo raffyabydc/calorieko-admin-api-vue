@@ -50,13 +50,13 @@
 import { ref, computed, watch, onMounted } from 'vue'
 import { Line } from 'vue-chartjs'
 import {
-  Chart as ChartJS, CategoryScale, LinearScale, PointElement,
+  Chart as ChartJS, LinearScale, PointElement,
   LineElement, Title, Tooltip, Legend, Filler
 } from 'chart.js'
 import { Scale as ScaleIcon } from 'lucide-vue-next'
 import { getWeightTrend } from '../../services/api.js'
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
+ChartJS.register(LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 
 const props = defineProps({
   uid: { type: String, required: true },
@@ -68,6 +68,8 @@ const selectedDays = ref(90)
 const trendData = ref(null)
 
 const hasData = computed(() => trendData.value?.weights?.length > 0)
+const startMs = computed(() => trendData.value?.start_ms ?? startOfTodayMinusDays(selectedDays.value - 1))
+const endMs = computed(() => trendData.value?.end_ms ?? endOfToday())
 
 const firstWeight = computed(() => trendData.value?.weights?.[0] ?? '—')
 const lastWeight = computed(() => {
@@ -90,10 +92,9 @@ const changeClass = computed(() => {
 })
 
 const chartData = computed(() => ({
-  labels: trendData.value?.labels || [],
   datasets: [{
     label: 'Weight (kg)',
-    data: trendData.value?.weights || [],
+    data: trendData.value?.points || [],
     borderColor: '#8b5cf6',
     backgroundColor: 'rgba(139, 92, 246, 0.08)',
     borderWidth: 2.5,
@@ -106,9 +107,10 @@ const chartData = computed(() => ({
   }]
 }))
 
-const chartOptions = {
+const chartOptions = computed(() => ({
   responsive: true,
   maintainAspectRatio: false,
+  parsing: false,
   plugins: {
     legend: { display: false },
     tooltip: {
@@ -118,14 +120,26 @@ const chartOptions = {
       padding: 12,
       cornerRadius: 8,
       callbacks: {
+        title: (items) => items.length ? formatDate(items[0].parsed.x) : '',
         label: (ctx) => `${ctx.parsed.y} kg`
       }
     }
   },
   scales: {
     x: {
+      type: 'linear',
+      min: startMs.value,
+      max: endMs.value,
       grid: { display: false },
-      ticks: { font: { size: 10 }, maxRotation: 45 }
+      ticks: {
+        font: { size: 10 },
+        maxRotation: 45,
+        callback: (value) => formatDate(value)
+      },
+      afterBuildTicks: (scale) => {
+        scale.ticks = buildTicks(startMs.value, endMs.value, selectedDays.value)
+          .map((value) => ({ value }))
+      }
     },
     y: {
       title: { display: true, text: 'Weight (kg)', font: { size: 11 } },
@@ -133,6 +147,37 @@ const chartOptions = {
       ticks: { font: { size: 10 } }
     }
   }
+}))
+
+function startOfTodayMinusDays(daysBack) {
+  const date = new Date()
+  date.setHours(0, 0, 0, 0)
+  date.setDate(date.getDate() - daysBack)
+  return date.getTime()
+}
+
+function endOfToday() {
+  const date = new Date()
+  date.setHours(23, 59, 59, 999)
+  return date.getTime()
+}
+
+function formatDate(timestamp) {
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric'
+  }).format(new Date(Number(timestamp)))
+}
+
+function buildTicks(start, end, days) {
+  const steps = days >= 365 ? 4 : days >= 180 ? 3 : days >= 90 ? 3 : days >= 60 ? 3 : 4
+  const ticks = []
+
+  for (let i = 0; i <= steps; i++) {
+    ticks.push(Math.round(start + ((end - start) * i) / steps))
+  }
+
+  return [...new Set(ticks)]
 }
 
 async function loadData() {
