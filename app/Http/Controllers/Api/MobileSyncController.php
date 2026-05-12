@@ -91,6 +91,14 @@ class MobileSyncController extends Controller
             'nutrition_summaries.*.uid'              => 'required|string',
             'nutrition_summaries.*.date_epoch_day'   => 'required|integer',
             'nutrition_summaries.*.updated_at'       => 'required|integer',
+
+            // Weight Logs
+            'weight_logs'                    => 'nullable|array',
+            'weight_logs.*.uid'              => 'required|string',
+            'weight_logs.*.date_epoch_day'   => 'required|integer',
+            'weight_logs.*.weight_kg'        => 'required|numeric|min:1',
+            'weight_logs.*.timestamp'        => 'required|integer',
+            'weight_logs.*.updated_at'       => 'required|integer',
         ]);
 
         if ($validator->fails()) {
@@ -122,6 +130,8 @@ class MobileSyncController extends Controller
             'activities_updated'    => 0,
             'summaries_inserted'    => 0,
             'summaries_updated'     => 0,
+            'weight_logs_inserted'  => 0,
+            'weight_logs_updated'   => 0,
         ];
 
         try {
@@ -394,12 +404,50 @@ class MobileSyncController extends Controller
                 }
             }
 
+            // ═════════════════════════════════════════════════════════
+            // 6. WEIGHT LOGS — weight_logs (admin analytics table)
+            //    Mobile sends: date_epoch_day, weight_kg, timestamp, updated_at.
+            //    Admin chart reads: weight, recorded_at.
+            // ═════════════════════════════════════════════════════════
+            $weightLogs = $request->input('weight_logs', []);
+            foreach ($weightLogs ?? [] as $weightLog) {
+                $recordedAt = (int) $weightLog['timestamp'];
+                $weightKg = (float) $weightLog['weight_kg'];
+
+                $existing = DB::table('weight_logs')
+                    ->where('uid', $uid)
+                    ->where('recorded_at', $recordedAt)
+                    ->first();
+
+                $weightData = [
+                    'uid'         => $uid,
+                    'weight'      => $weightKg,
+                    'recorded_at' => $recordedAt,
+                ];
+
+                if (!$existing) {
+                    $weightData['created_at'] = now();
+                    $weightData['updated_at'] = now();
+                    DB::table('weight_logs')->insert($weightData);
+                    $stats['weight_logs_inserted']++;
+                } else {
+                    DB::table('weight_logs')
+                        ->where('id', $existing->id)
+                        ->update([
+                            'weight'     => $weightKg,
+                            'updated_at' => now(),
+                        ]);
+                    $stats['weight_logs_updated']++;
+                }
+            }
+
             DB::commit();
 
             $elapsed = round((microtime(true) - $startTime) * 1000);
             $totalProcessed = $stats['meals_inserted'] + $stats['meals_updated']
                 + $stats['activities_inserted'] + $stats['activities_updated']
                 + $stats['summaries_inserted'] + $stats['summaries_updated']
+                + $stats['weight_logs_inserted'] + $stats['weight_logs_updated']
                 + ($stats['profile_updated'] ? 1 : 0);
 
             Log::info("Delta sync completed for UID: {$uid}", [

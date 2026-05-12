@@ -154,17 +154,29 @@ class AnalyticsController extends Controller
     {
         $request->validate([
             'uid'         => 'required|string',
-            'weight'      => 'required|numeric|min:20|max:500',
-            'recorded_at' => 'required|integer',
+            'weight'      => 'nullable|numeric|min:1|max:500',
+            'weight_kg'   => 'nullable|numeric|min:1|max:500',
+            'recorded_at' => 'nullable|integer',
+            'timestamp'   => 'nullable|integer',
         ]);
+
+        $weight = $request->input('weight', $request->input('weight_kg'));
+        $recordedAt = $request->input('recorded_at', $request->input('timestamp'));
+
+        if ($weight === null || $recordedAt === null) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Either weight/recorded_at or weight_kg/timestamp is required.',
+            ], 422);
+        }
 
         $log = WeightLog::updateOrCreate(
             [
                 'uid'         => $request->uid,
-                'recorded_at' => $request->recorded_at,
+                'recorded_at' => (int) $recordedAt,
             ],
             [
-                'weight' => $request->weight,
+                'weight' => (float) $weight,
             ]
         );
 

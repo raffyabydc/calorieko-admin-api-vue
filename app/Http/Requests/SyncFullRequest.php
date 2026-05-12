@@ -111,6 +111,14 @@ class SyncFullRequest extends FormRequest
             'nutrition_summaries.*.lunch_calories' => 'nullable|numeric',
             'nutrition_summaries.*.dinner_calories' => 'nullable|numeric',
             'nutrition_summaries.*.snacks_calories' => 'nullable|numeric',
+
+            // Weight Logs Validation
+            'weight_logs' => 'nullable|array',
+            'weight_logs.*.uid' => 'required_with:weight_logs|string',
+            'weight_logs.*.date_epoch_day' => 'required_with:weight_logs|integer',
+            'weight_logs.*.weight_kg' => 'required_with:weight_logs|numeric|min:1',
+            'weight_logs.*.timestamp' => 'required_with:weight_logs|integer',
+            'weight_logs.*.updated_at' => 'required_with:weight_logs|integer',
         ];
     }
 
