@@ -53,11 +53,14 @@
 
       <!-- Stats Bar -->
       <div v-if="!loading && foods.length > 0" class="stats-bar">
-        <span class="stats-chip">📊 {{ foods.length }} total items</span>
+        <span class="stats-chip">📊 {{ foods.length }} items</span>
         <span class="stats-chip">🇵🇭 {{ fnriCount }} FNRI</span>
         <span class="stats-chip">🇺🇸 {{ usdaCount }} USDA</span>
         <span class="stats-chip">🤖 {{ mlCount }} ML-labeled</span>
-        <span class="stats-chip">🔒 {{ usdaProtectedCount }} USDA-verified</span>
+        <label class="usda-toggle" title="USDA-verified dishes use core nutrition data and cannot be edited here.">
+          <input type="checkbox" v-model="showUsda" @change="fetchFoodsList" />
+          <span>Show {{ serverProtectedCount }} USDA-protected (read-only)</span>
+        </label>
       </div>
 
       <!-- Loading State -->
@@ -385,8 +388,10 @@ import { getFoods, createFood, updateFood, deleteFood, bulkImportFoods } from '.
 
 // State
 const foods = ref([])
+const serverProtectedCount = ref(0)
 const loading = ref(true)
 const error = ref(null)
+const showUsda = ref(false)
 
 const searchQuery = ref('')
 const categoryFilter = ref('all')
@@ -450,8 +455,9 @@ const fetchFoodsList = async () => {
   loading.value = true
   error.value = null
   try {
-    const data = await getFoods()
-    foods.value = data
+    const data = await getFoods(showUsda.value ? { show_usda: true } : {})
+    foods.value = data.foods || []
+    serverProtectedCount.value = data.protected_count || 0
   } catch (err) {
     console.error("Failed to fetch food database:", err)
     error.value = "Failed to load food database. Is the API running?"
@@ -673,6 +679,21 @@ const confirmDelete = async () => {
   border: 1px solid #99f6e4;
   cursor: help;
   white-space: nowrap;
+}
+
+/* USDA Toggle */
+.usda-toggle {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  font-size: 0.75rem; color: var(--ck-gray-500);
+  cursor: pointer; user-select: none;
+  padding: 0.25rem 0.75rem; border-radius: 999px;
+  background: var(--ck-gray-100);
+  transition: all 0.2s;
+}
+.usda-toggle:hover { background: var(--ck-gray-200); }
+.usda-toggle input[type="checkbox"] {
+  width: 14px; height: 14px; accent-color: #0d9488;
+  cursor: pointer;
 }
 
 /* Modal */

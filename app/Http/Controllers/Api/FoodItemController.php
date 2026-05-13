@@ -27,10 +27,12 @@ class FoodItemController extends Controller
 
     /**
      * Check if a food item is USDA-protected (cannot be edited or deleted).
+     * Includes all USDA records and the 29 core dishes that use the mobile recipe system.
      */
     private function isUsdaProtected(FoodItem $food): bool
     {
-        return in_array($food->ml_label, self::USDA_PROTECTED_LABELS, true);
+        return str_starts_with($food->data_source, 'USDA') ||
+               in_array($food->ml_label, self::USDA_PROTECTED_LABELS, true);
     }
     /**
      * Full validation rules for all nutrient fields.
@@ -90,20 +92,36 @@ class FoodItemController extends Controller
     {
         $query = FoodItem::query();
 
+        // Hide protected dishes by default — they're inert in this context
+        if (!$request->boolean('show_usda', false)) {
+            $query->whereNotIn('ml_label', self::USDA_PROTECTED_LABELS)
+                  ->where('data_source', 'not like', 'USDA%');
+        }
+
         if ($request->has('search')) {
             $search = $request->input('search');
-            $query->where('name_en', 'like', "%{$search}%")
+            $query->where(function ($q) use ($search) {
+                $q->where('name_en', 'like', "%{$search}%")
                   ->orWhere('name_ph', 'like', "%{$search}%");
+            });
         }
 
         if ($request->has('category')) {
             $query->where('category', $request->input('category'));
         }
 
-        return response()->json($query->get()->map(function ($food) {
+        $foods = $query->get()->map(function ($food) {
             $food->is_usda_protected = $this->isUsdaProtected($food);
             return $food;
-        }));
+        });
+
+        return response()->json([
+            'foods' => $foods,
+            'protected_count' => FoodItem::where(function ($q) {
+                $q->whereIn('ml_label', self::USDA_PROTECTED_LABELS)
+                  ->orWhere('data_source', 'like', 'USDA%');
+            })->count()
+        ]);
     }
 
     /**

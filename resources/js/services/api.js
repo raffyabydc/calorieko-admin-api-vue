@@ -182,8 +182,11 @@ export async function getMealLog(id) {
 }
 
 // ── Food Items ──
-export async function getFoods() {
-    return fetchJSON('/foods')
+export async function getFoods(params = {}) {
+    let url = '/foods'
+    const query = new URLSearchParams(params).toString()
+    if (query) url += '?' + query
+    return fetchJSON(url)
 }
 
 export async function createFood(data) {
