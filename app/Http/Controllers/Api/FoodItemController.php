@@ -10,6 +10,29 @@ use Illuminate\Http\JsonResponse;
 class FoodItemController extends Controller
 {
     /**
+     * ML labels of dishes with USDA-verified ingredient-level nutrition in the mobile app.
+     * These dishes use System B (RecipeNutritionCalculator) on mobile — any admin edits
+     * to their FOOD_TABLE rows would be silently skipped during sync.
+     * Block editing/deleting outright to avoid confusion.
+     */
+    private const USDA_PROTECTED_LABELS = [
+        'chicken_breast', 'chicken_drumstick', 'chicken_thigh', 'chicken_tinola',
+        'chicken_wing', 'chopseuy', 'egg_ampalaya', 'egg_boiled', 'egg_omelette',
+        'egg_scrambled', 'egg_sunny', 'galunggong_fried', 'galunggong_grilled',
+        'humba_pork', 'kinilaw_tuna', 'kwekwek', 'lawuy', 'linatan',
+        'mackerel_fried', 'menudo', 'milkfish_fried', 'pinakbet',
+        'rice_well_milled', 'sinabawang_bangus', 'sinigang_pork',
+        'sinuglaw_pork', 'tilapia_fried', 'tinapa_ginisa', 'udong',
+    ];
+
+    /**
+     * Check if a food item is USDA-protected (cannot be edited or deleted).
+     */
+    private function isUsdaProtected(FoodItem $food): bool
+    {
+        return in_array($food->ml_label, self::USDA_PROTECTED_LABELS, true);
+    }
+    /**
      * Full validation rules for all nutrient fields.
      * Shared across sync, store, and update endpoints.
      */
@@ -77,7 +100,10 @@ class FoodItemController extends Controller
             $query->where('category', $request->input('category'));
         }
 
-        return response()->json($query->get());
+        return response()->json($query->get()->map(function ($food) {
+            $food->is_usda_protected = $this->isUsdaProtected($food);
+            return $food;
+        }));
     }
 
     /**
@@ -111,6 +137,14 @@ class FoodItemController extends Controller
     {
         $food = FoodItem::findOrFail($id);
 
+        // Guard: USDA-verified dishes cannot be edited
+        if ($this->isUsdaProtected($food)) {
+            return response()->json([
+                'message' => "This dish uses USDA-verified nutrition data and cannot be edited. Changes would be ignored by the mobile app's sync system.",
+                'error' => 'usda_protected',
+            ], 403);
+        }
+
         $data = $request->validate($this->fullNutrientRules());
 
         $food->update($data);
@@ -127,6 +161,15 @@ class FoodItemController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $food = FoodItem::findOrFail($id);
+
+        // Guard: USDA-verified dishes cannot be deleted
+        if ($this->isUsdaProtected($food)) {
+            return response()->json([
+                'message' => "This dish uses USDA-verified nutrition data and cannot be deleted. It is required by the mobile app's recipe system.",
+                'error' => 'usda_protected',
+            ], 403);
+        }
+
         $name = $food->name_en;
         $food->delete();
 

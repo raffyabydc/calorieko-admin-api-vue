@@ -57,6 +57,7 @@
         <span class="stats-chip">🇵🇭 {{ fnriCount }} FNRI</span>
         <span class="stats-chip">🇺🇸 {{ usdaCount }} USDA</span>
         <span class="stats-chip">🤖 {{ mlCount }} ML-labeled</span>
+        <span class="stats-chip">🔒 {{ usdaProtectedCount }} USDA-verified</span>
       </div>
 
       <!-- Loading State -->
@@ -108,12 +109,20 @@
                   </span>
                 </td>
                 <td style="text-align: center;">
-                  <button class="action-btn" @click="openEditModal(item)" title="Edit">
-                    <EditIcon :size="16" />
-                  </button>
-                  <button class="action-btn action-btn--danger" @click="openDeleteModal(item)" title="Delete">
-                    <TrashIcon :size="16" />
-                  </button>
+                  <template v-if="item.is_usda_protected">
+                    <span class="usda-verified-badge" title="This dish uses USDA-verified nutrition data and cannot be edited. Changes would be ignored by the mobile app.">
+                      <ShieldCheckIcon :size="14" />
+                      USDA Verified
+                    </span>
+                  </template>
+                  <template v-else>
+                    <button class="action-btn" @click="openEditModal(item)" title="Edit">
+                      <EditIcon :size="16" />
+                    </button>
+                    <button class="action-btn action-btn--danger" @click="openDeleteModal(item)" title="Delete">
+                      <TrashIcon :size="16" />
+                    </button>
+                  </template>
                 </td>
               </tr>
             </tbody>
@@ -369,7 +378,8 @@ import {
   Edit as EditIcon,
   Trash as TrashIcon,
   X as XIcon,
-  Upload as UploadIcon
+  Upload as UploadIcon,
+  ShieldCheck as ShieldCheckIcon
 } from 'lucide-vue-next'
 import { getFoods, createFood, updateFood, deleteFood, bulkImportFoods } from '../services/api.js'
 
@@ -467,6 +477,7 @@ const filteredFoods = computed(() => {
 const fnriCount = computed(() => foods.value.filter(f => (f.data_source || '').includes('FNRI')).length)
 const usdaCount = computed(() => foods.value.filter(f => (f.data_source || '').includes('USDA')).length)
 const mlCount = computed(() => foods.value.filter(f => f.ml_label && f.ml_label !== 'manual_entry').length)
+const usdaProtectedCount = computed(() => foods.value.filter(f => f.is_usda_protected).length)
 
 // Source tag styling
 const sourceClass = (source) => {
@@ -652,6 +663,17 @@ const confirmDelete = async () => {
 }
 .source-chip--fnri { background: #dcfce7; color: #166534; }
 .source-chip--usda { background: #dbeafe; color: #1e40af; }
+
+/* USDA Verified Badge */
+.usda-verified-badge {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  padding: 0.25rem 0.625rem; border-radius: 999px;
+  font-size: 0.6875rem; font-weight: 600;
+  background: #f0fdfa; color: #0d9488;
+  border: 1px solid #99f6e4;
+  cursor: help;
+  white-space: nowrap;
+}
 
 /* Modal */
 .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.5); display: flex; align-items: center; justify-content: center; z-index: 10000; }
