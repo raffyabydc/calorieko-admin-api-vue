@@ -195,7 +195,10 @@ export async function createFood(data) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    if (!res.ok) throw new Error('Failed to create food item')
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.message || 'Failed to create food item')
+    }
     return res.json()
 }
 
@@ -205,7 +208,10 @@ export async function updateFood(id, data) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
     })
-    if (!res.ok) throw new Error('Failed to update food item')
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.message || 'Failed to update food item')
+    }
     return res.json()
 }
 
@@ -213,7 +219,10 @@ export async function deleteFood(id) {
     const res = await authenticatedFetch(`${API_BASE}/foods/${id}`, {
         method: 'DELETE'
     })
-    if (!res.ok) throw new Error('Failed to delete food item')
+    if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.message || 'Failed to delete food item')
+    }
     return res.json()
 }
 

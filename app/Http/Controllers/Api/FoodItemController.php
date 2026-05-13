@@ -31,8 +31,9 @@ class FoodItemController extends Controller
      */
     private function isUsdaProtected(FoodItem $food): bool
     {
-        return str_starts_with($food->data_source, 'USDA') ||
-               in_array($food->ml_label, self::USDA_PROTECTED_LABELS, true);
+        // Align with mobile sync: only protect dishes hardcoded in the mobile app's
+        // recipe system (System B). Other dishes can be managed by admins.
+        return in_array($food->ml_label, self::USDA_PROTECTED_LABELS, true);
     }
     /**
      * Full validation rules for all nutrient fields.
