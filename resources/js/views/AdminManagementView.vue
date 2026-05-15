@@ -13,14 +13,13 @@
         </button>
       </div>
       
-      <!-- Success Alert -->
-      <Transition name="fade">
-        <div v-if="successMessage" class="success-alert">
-          <CheckIcon :size="18" />
-          <span>{{ successMessage }}</span>
-          <button @click="successMessage = null" class="close-alert">&times;</button>
-        </div>
-      </Transition>
+      <!-- Toast Notification -->
+      <ToastNotification 
+        v-if="successMessage" 
+        :message="successMessage" 
+        :duration="8000"
+        @close="successMessage = null" 
+      />
 
       <!-- Loading State -->
       <div v-if="loading" class="empty-state">
@@ -169,6 +168,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import ToastNotification from '../components/ToastNotification.vue'
 import {
   UserPlus as UserPlusIcon,
   Shield as ShieldIcon,
@@ -294,9 +294,11 @@ const confirmDelete = (admin) => {
 
 const executeDelete = async () => {
   if (!selectedAdmin.value) return
+  const adminEmail = selectedAdmin.value.email
   try {
     await deleteModerator(selectedAdmin.value.id)
     admins.value = admins.value.filter(a => a.id !== selectedAdmin.value.id)
+    successMessage.value = `Moderator "${adminEmail}" has been permanently deleted.`
     showDeleteModal.value = false
     selectedAdmin.value = null
   } catch (err) {
@@ -394,39 +396,5 @@ onMounted(() => {
 
 .action-btn:active {
   transform: scale(0.9);
-}
-
-/* Success Alert */
-.success-alert {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  background: #ecfdf5;
-  border: 1px solid #10b981;
-  color: #065f46;
-  padding: 1rem 1.25rem;
-  border-radius: var(--ck-radius-lg);
-  margin-bottom: 1.5rem;
-  font-size: 0.875rem;
-  position: relative;
-}
-
-.success-alert span {
-  flex: 1;
-}
-
-.close-alert {
-  background: transparent;
-  border: none;
-  font-size: 1.25rem;
-  color: #065f46;
-  cursor: pointer;
-  padding: 0 0.5rem;
-  opacity: 0.5;
-  transition: opacity 0.2s;
-}
-
-.close-alert:hover {
-  opacity: 1;
 }
 </style>
