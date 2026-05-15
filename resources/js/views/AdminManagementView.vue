@@ -7,7 +7,7 @@
           <h2 class="page-title">Admin Management</h2>
           <p class="page-subtitle">Role-Based Access Control & System Administrators</p>
         </div>
-        <button @click="showAddModal = true" class="ck-btn ck-btn--primary">
+        <button @click="openAddModal" class="ck-btn ck-btn--primary">
           <UserPlusIcon :size="16" />
           Add Moderator
         </button>
@@ -103,7 +103,29 @@
               
               <div class="form-group">
                 <label class="form-label">Initial Password</label>
-                <input v-model="form.password" type="password" class="ck-input" required minlength="8" placeholder="At least 8 characters">
+                <div class="password-input-group">
+                  <input 
+                    v-model="form.password" 
+                    :type="showPassword ? 'text' : 'password'" 
+                    class="ck-input" 
+                    required 
+                    minlength="8" 
+                    placeholder="At least 8 characters"
+                  >
+                  <div class="password-actions">
+                    <button type="button" class="action-btn" @click="showPassword = !showPassword" title="Toggle Visibility">
+                      <EyeIcon v-if="!showPassword" :size="16" />
+                      <EyeOffIcon v-else :size="16" />
+                    </button>
+                    <button type="button" class="action-btn" @click="generatePassword" title="Regenerate Password">
+                      <RefreshIcon :size="16" />
+                    </button>
+                    <button type="button" class="action-btn" @click="copyToClipboard" :title="copied ? 'Copied!' : 'Copy to Clipboard'">
+                      <CheckIcon v-if="copied" :size="16" style="color: var(--ck-primary-600);" />
+                      <CopyIcon v-else :size="16" />
+                    </button>
+                  </div>
+                </div>
               </div>
               
               <div v-if="formError" style="color: #ef4444; font-size: 0.875rem; padding: 0.5rem; background: #fef2f2; border-radius: 6px;">
@@ -150,7 +172,12 @@ import {
   Shield as ShieldIcon,
   ShieldAlert as ShieldAlertIcon,
   Trash as TrashIcon,
-  X as XIcon
+  X as XIcon,
+  Copy as CopyIcon,
+  RefreshCcw as RefreshIcon,
+  Eye as EyeIcon,
+  EyeOff as EyeOffIcon,
+  Check as CheckIcon
 } from 'lucide-vue-next'
 import { getModerators, createModerator, toggleModerator, deleteModerator } from '../services/api.js'
 
@@ -167,6 +194,48 @@ const selectedAdmin = ref(null)
 const form = ref({ name: '', email: '', password: '' })
 const formSubmitting = ref(false)
 const formError = ref(null)
+const showPassword = ref(false)
+const copied = ref(false)
+
+const generatePassword = () => {
+  const length = 8
+  const upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+  const lower = "abcdefghijklmnopqrstuvwxyz"
+  const numbers = "0123456789"
+  const symbols = "!@#$%^&*"
+  
+  // Guarantee at least one of each required type
+  let password = ""
+  password += upper.charAt(Math.floor(Math.random() * upper.length))
+  password += lower.charAt(Math.floor(Math.random() * lower.length))
+  password += numbers.charAt(Math.floor(Math.random() * numbers.length))
+  password += symbols.charAt(Math.floor(Math.random() * symbols.length))
+  
+  // Fill the remaining 4 characters
+  const all = upper + lower + numbers + symbols
+  for (let i = 0; i < 4; i++) {
+    password += all.charAt(Math.floor(Math.random() * all.length))
+  }
+  
+  // Shuffle to randomize positions
+  form.value.password = password.split('').sort(() => Math.random() - 0.5).join('')
+}
+
+const copyToClipboard = async () => {
+  if (!form.value.password) return
+  try {
+    await navigator.clipboard.writeText(form.value.password)
+    copied.value = true
+    setTimeout(() => copied.value = false, 2000)
+  } catch (err) {
+    console.error('Failed to copy password', err)
+  }
+}
+
+const openAddModal = () => {
+  generatePassword()
+  showAddModal.value = true
+}
 
 const fetchAdmins = async () => {
   loading.value = true
@@ -271,5 +340,45 @@ onMounted(() => {
 .modal__footer {
   padding: 1.25rem 1.5rem; background: var(--ck-gray-50); border-top: 1px solid var(--ck-gray-200);
   display: flex; justify-content: flex-end; gap: 0.75rem;
+}
+
+/* Password Input Group */
+.password-input-group {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-group .ck-input {
+  padding-right: 100px;
+}
+
+.password-actions {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+}
+
+.action-btn {
+  background: transparent;
+  border: none;
+  padding: 6px;
+  border-radius: 6px;
+  color: var(--ck-gray-400);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: var(--ck-gray-100);
+  color: var(--ck-gray-700);
+}
+
+.action-btn:active {
+  transform: scale(0.9);
 }
 </style>
