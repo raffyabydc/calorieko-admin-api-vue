@@ -12,6 +12,15 @@
           Add Moderator
         </button>
       </div>
+      
+      <!-- Success Alert -->
+      <Transition name="fade">
+        <div v-if="successMessage" class="success-alert">
+          <CheckIcon :size="18" />
+          <span>{{ successMessage }}</span>
+          <button @click="successMessage = null" class="close-alert">&times;</button>
+        </div>
+      </Transition>
 
       <!-- Loading State -->
       <div v-if="loading" class="empty-state">
@@ -187,6 +196,7 @@ const selectedAdmin = ref(null)
 const form = ref({ name: '', email: '', password: '' })
 const formSubmitting = ref(false)
 const formError = ref(null)
+const successMessage = ref(null)
 const showPassword = ref(false)
 const copied = ref(false)
 
@@ -258,7 +268,9 @@ const submitAddModerator = async () => {
   try {
     const res = await createModerator(form.value)
     admins.value.push(res.admin)
-    closeAddModal(true) // Force close without confirmation
+    successMessage.value = `Moderator "${res.admin.name}" created successfully! The credentials have been sent to ${res.admin.email}.`
+    closeAddModal(true)
+    setTimeout(() => { successMessage.value = null }, 8000)
   } catch (err) {
     formError.value = err.message || "Failed to create moderator account."
   } finally {
@@ -382,5 +394,39 @@ onMounted(() => {
 
 .action-btn:active {
   transform: scale(0.9);
+}
+
+/* Success Alert */
+.success-alert {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  color: #065f46;
+  padding: 1rem 1.25rem;
+  border-radius: var(--ck-radius-lg);
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  position: relative;
+}
+
+.success-alert span {
+  flex: 1;
+}
+
+.close-alert {
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #065f46;
+  cursor: pointer;
+  padding: 0 0.5rem;
+  opacity: 0.5;
+  transition: opacity 0.2s;
+}
+
+.close-alert:hover {
+  opacity: 1;
 }
 </style>
