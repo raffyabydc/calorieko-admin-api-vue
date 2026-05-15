@@ -148,7 +148,7 @@
     <!-- Delete Confirmation Modal -->
     <Teleport to="body">
       <div v-if="showDeleteModal" class="ck-overlay" @click.self="showDeleteModal = false">
-        <div class="modal animate-fade-in">
+        <div class="modal animate-fade-in" style="max-width: 400px;">
           <div class="modal__header">
             <h3 style="color: #ef4444;">Delete Moderator</h3>
           </div>
