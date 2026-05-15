@@ -8,6 +8,8 @@ use App\Models\SystemLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ModeratorCreated;
 
 class AdminManagementController extends Controller
 {
@@ -83,8 +85,16 @@ class AdminManagementController extends Controller
             "Moderator created: {$request->email}",
             'Success',
             $request->ip(),
-            "Super Admin created a new Moderator account."
+            "Super Admin created a new Moderator account. Credentials sent to email."
         );
+
+        // Send Welcome Email with credentials
+        try {
+            Mail::to($admin->email)->send(new ModeratorCreated($admin, $request->password));
+        } catch (\Exception $e) {
+            // Log the error but don't fail the request since the admin was created
+            \Illuminate\Support\Facades\Log::error("Failed to send welcome email to {$admin->email}: " . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'Moderator account created successfully.',

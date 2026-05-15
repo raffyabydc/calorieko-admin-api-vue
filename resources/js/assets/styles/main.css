@@ -248,6 +248,34 @@ img {
   box-shadow: none;
 }
 
+.ck-btn--danger {
+  background: var(--ck-red);
+  color: white;
+  box-shadow: var(--ck-shadow-md);
+}
+
+.ck-btn--danger:hover {
+  background: #dc2626; /* Darker red */
+  box-shadow: var(--ck-shadow-lg);
+}
+
+.ck-btn--outline {
+  background: transparent;
+  color: var(--ck-gray-700);
+  border: 1px solid var(--ck-gray-300);
+}
+
+.ck-btn--outline:hover {
+  background: var(--ck-gray-50);
+  border-color: var(--ck-gray-400);
+}
+
+.ck-btn--sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.8125rem;
+  gap: 0.5rem;
+}
+
 .ck-btn--full {
   width: 100%;
 }

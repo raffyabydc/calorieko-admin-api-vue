@@ -102,16 +102,9 @@
               </div>
               
               <div class="form-group">
-                <label class="form-label">Initial Password</label>
-                <div class="password-input-group">
-                  <input 
-                    v-model="form.password" 
-                    :type="showPassword ? 'text' : 'password'" 
-                    class="ck-input" 
-                    required 
-                    minlength="8" 
-                    placeholder="At least 8 characters"
-                  >
+                <label class="form-label">Initial Password (System-Generated)</label>
+                <div class="password-display-box">
+                  <code class="password-text">{{ showPassword ? form.password : '••••••••' }}</code>
                   <div class="password-actions">
                     <button type="button" class="action-btn" @click="showPassword = !showPassword" title="Toggle Visibility">
                       <EyeIcon v-if="!showPassword" :size="16" />
@@ -133,8 +126,8 @@
               </div>
             </div>
             <div class="modal__footer">
-              <button type="button" class="btn btn--secondary" @click="closeAddModal">Cancel</button>
-              <button type="submit" class="btn btn--primary" :disabled="formSubmitting">
+              <button type="button" class="ck-btn ck-btn--ghost" @click="closeAddModal">Cancel</button>
+              <button type="submit" class="ck-btn ck-btn--primary" :disabled="formSubmitting">
                 {{ formSubmitting ? 'Creating...' : 'Create Moderator' }}
               </button>
             </div>
@@ -155,8 +148,8 @@
             <p style="margin-top: 0.5rem; font-size: 0.8125rem; color: #ef4444;">This action cannot be undone.</p>
           </div>
           <div class="modal__footer">
-            <button class="btn btn--secondary" @click="showDeleteModal = false">Cancel</button>
-            <button class="btn btn--danger" @click="executeDelete">Yes, Delete Account</button>
+            <button class="ck-btn ck-btn--ghost" @click="showDeleteModal = false">Cancel</button>
+            <button class="ck-btn ck-btn--danger" @click="executeDelete">Yes, Delete Account</button>
           </div>
         </div>
       </div>
@@ -249,13 +242,14 @@ const fetchAdmins = async () => {
   }
 }
 
-const closeAddModal = () => {
-  if ((form.value.name || form.value.email || form.value.password) && !confirm('You have unsaved changes. Are you sure you want to discard them?')) {
+const closeAddModal = (force = false) => {
+  if (!force && (form.value.name || form.value.email || form.value.password) && !confirm('You have unsaved changes. Are you sure you want to discard them?')) {
     return
   }
   showAddModal.value = false
   form.value = { name: '', email: '', password: '' }
   formError.value = null
+  showPassword.value = false
 }
 
 const submitAddModerator = async () => {
@@ -264,7 +258,7 @@ const submitAddModerator = async () => {
   try {
     const res = await createModerator(form.value)
     admins.value.push(res.admin)
-    closeAddModal()
+    closeAddModal(true) // Force close without confirmation
   } catch (err) {
     formError.value = err.message || "Failed to create moderator account."
   } finally {
@@ -342,20 +336,28 @@ onMounted(() => {
   display: flex; justify-content: flex-end; gap: 0.75rem;
 }
 
-/* Password Input Group */
-.password-input-group {
-  position: relative;
+/* Password Display Box (Read-only) */
+.password-display-box {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  background: var(--ck-gray-100);
+  border: 1px solid var(--ck-gray-200);
+  border-radius: var(--ck-radius-lg);
+  padding: 0.75rem 1rem;
+  min-height: 46px;
+  position: relative;
 }
 
-.password-input-group .ck-input {
-  padding-right: 100px;
+.password-text {
+  font-family: var(--ck-font-mono);
+  font-size: 1rem;
+  color: var(--ck-gray-900);
+  letter-spacing: 0.05em;
+  user-select: none; /* Prevent accidental selection since we have a copy button */
 }
 
 .password-actions {
-  position: absolute;
-  right: 8px;
   display: flex;
   gap: 4px;
 }
