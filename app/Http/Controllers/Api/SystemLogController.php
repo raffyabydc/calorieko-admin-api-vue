@@ -29,6 +29,20 @@ class SystemLogController extends Controller
             $query->where('status', $request->status);
         }
 
-        return response()->json($query->orderBy('created_at', 'desc')->paginate(15));
+        if ($request->filled('start_date')) {
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        if ($request->filled('end_date')) {
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        $query->orderBy('created_at', 'desc');
+
+        if ($request->boolean('nopaginate')) {
+            return response()->json($query->get());
+        }
+
+        return response()->json($query->paginate(15));
     }
 }

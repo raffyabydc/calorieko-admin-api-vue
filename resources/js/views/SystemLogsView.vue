@@ -38,6 +38,25 @@
           <option value="Success">Success</option>
           <option value="Failed">Failed</option>
         </select>
+
+        <div class="date-range-filters">
+          <div class="date-input-group">
+            <label>From:</label>
+            <input type="date" v-model="startDate" class="ck-input ck-input--sm" />
+          </div>
+          <div class="date-input-group">
+            <label>To:</label>
+            <input type="date" v-model="endDate" class="ck-input ck-input--sm" />
+          </div>
+          <button v-if="startDate || endDate" @click="clearDates" class="clear-dates-btn" title="Clear Dates">
+            <XIcon :size="14" />
+          </button>
+        </div>
+
+        <button @click="exportPDF" class="export-pdf-btn" :disabled="isExporting || logs.length === 0">
+          <FileTextIcon :size="14" class="icon-spacing" />
+          {{ isExporting ? 'Exporting...' : 'Export PDF' }}
+        </button>
       </div>
 
       <div v-if="error" class="empty-state" style="color: var(--ck-red-500);">
@@ -128,9 +147,13 @@
 import { ref, computed, onMounted } from 'vue'
 import {
   Search as SearchIcon,
-  RefreshCw as RefreshCwIcon
+  RefreshCw as RefreshCwIcon,
+  FileText as FileTextIcon,
+  X as XIcon
 } from 'lucide-vue-next'
 import { getSystemLogs } from '../services/api.js'
+import { jsPDF } from 'jspdf'
+import { autoTable } from 'jspdf-autotable'
 
 const logs = ref([])
 const isLoading = ref(false)
@@ -139,6 +162,9 @@ const autoRefresh = ref(true)
 
 const searchQuery = ref('')
 const statusFilter = ref('all')
+const startDate = ref('')
+const endDate = ref('')
+const isExporting = ref(false)
 
 const pagination = ref({
   current_page: 1,
@@ -175,7 +201,9 @@ const fetchLogs = async (page = 1) => {
     const params = {
       page,
       search: searchQuery.value,
-      status: statusFilter.value
+      status: statusFilter.value,
+      start_date: startDate.value,
+      end_date: endDate.value
     }
     const response = await getSystemLogs(params)
     logs.value = response.data
@@ -194,6 +222,83 @@ const fetchLogs = async (page = 1) => {
   }
 }
 
+const exportPDF = async () => {
+  if (isExporting.value) return
+  isExporting.value = true
+  
+  try {
+    const params = {
+      search: searchQuery.value,
+      status: statusFilter.value,
+      start_date: startDate.value,
+      end_date: endDate.value,
+      nopaginate: true
+    }
+    const allLogs = await getSystemLogs(params)
+    
+    const doc = new jsPDF('landscape')
+    
+    // Header
+    doc.setFontSize(18)
+    doc.setTextColor(17, 24, 39) // ck-gray-900
+    doc.setFont('helvetica', 'bold')
+    doc.text('CalorieKo Admin: System Audit Logs', 14, 15)
+
+    doc.setFontSize(10)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(75, 85, 99) // ck-gray-600
+    
+    let filterDesc = `Status: ${statusFilter.value}`
+    if (searchQuery.value) filterDesc += ` | Search: "${searchQuery.value}"`
+    if (startDate.value) filterDesc += ` | From: ${startDate.value}`
+    if (endDate.value) filterDesc += ` | To: ${endDate.value}`
+    
+    doc.text(filterDesc, 14, 22)
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 14, 28)
+
+    // Horizontal line
+    doc.setDrawColor(229, 231, 235) // ck-gray-200
+    doc.line(14, 32, doc.internal.pageSize.width - 14, 32)
+
+    const tableHeaders = [['Timestamp', 'Administrator', 'Action', 'Resource', 'Status', 'IP Address', 'Details']]
+    const tableRows = allLogs.map(log => [
+      formatDate(log.created_at),
+      log.admin_email || '—',
+      log.action,
+      log.target_resource || '—',
+      log.status,
+      log.ip_address || '—',
+      log.details || '—'
+    ])
+
+    autoTable(doc, {
+      head: tableHeaders,
+      body: tableRows,
+      startY: 35,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [16, 185, 129] }, // calorieko-green
+      columnStyles: {
+        0: { cellWidth: 35 },
+        1: { cellWidth: 40 },
+        6: { cellWidth: 'auto' }
+      }
+    })
+
+    doc.save(`system_logs_export_${new Date().toISOString().split('T')[0]}.pdf`)
+  } catch (err) {
+    console.error("PDF Export failed:", err)
+    alert("Failed to export PDF. Please check the console.")
+  } finally {
+    isExporting.value = false
+  }
+}
+
+const clearDates = () => {
+  startDate.value = ''
+  endDate.value = ''
+  fetchLogs(1)
+}
+
 const changePage = (page) => {
   if (page < 1 || page > pagination.value.last_page) return
   fetchLogs(page)
@@ -210,6 +315,14 @@ const handleSearchChange = () => {
 // Watch status filter
 import { watch } from 'vue'
 watch(statusFilter, () => {
+  fetchLogs(1)
+})
+
+watch(startDate, () => {
+  fetchLogs(1)
+})
+
+watch(endDate, () => {
   fetchLogs(1)
 })
 
@@ -519,5 +632,95 @@ input:checked + .slider:before {
   background: #f97316;
   border-color: #f97316;
   color: white;
+}
+
+/* Date Filters & Export PDF */
+.date-range-filters {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: white;
+  padding: 0.25rem 0.75rem;
+  border: 1px solid var(--ck-gray-200);
+  border-radius: var(--ck-radius-md);
+}
+
+.date-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.date-input-group label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ck-gray-500);
+  text-transform: uppercase;
+}
+
+.ck-input--sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8125rem;
+  border-color: transparent;
+  background: transparent;
+}
+
+.ck-input--sm:focus {
+  border-color: var(--ck-gray-200);
+  background: white;
+}
+
+.clear-dates-btn {
+  background: var(--ck-gray-100);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ck-gray-500);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-dates-btn:hover {
+  background: var(--ck-red-100);
+  color: var(--ck-red-600);
+}
+
+.export-pdf-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--ck-primary);
+  color: white;
+  border: none;
+  border-radius: var(--ck-radius-md);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.export-pdf-btn:hover:not(:disabled) {
+  background: var(--ck-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--ck-shadow-md);
+}
+
+.export-pdf-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 1024px) {
+  .export-pdf-btn {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>
