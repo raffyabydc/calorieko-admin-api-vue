@@ -49,7 +49,7 @@
         <div v-if="isLoading" class="local-loading-overlay">
           <div class="spinner-orange"></div>
         </div>
-        <div class="table-wrapper" v-if="filteredLogs.length > 0">
+        <div class="table-wrapper" v-if="logs.length > 0">
           <table class="ck-table">
             <thead>
               <tr>
@@ -63,7 +63,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="log in filteredLogs" :key="log.id">
+              <tr v-for="log in logs" :key="log.id">
                 <td style="white-space: nowrap; font-size: 0.8125rem;">{{ formatDate(log.created_at) }}</td>
                 <td style="font-weight: 500;">{{ log.admin_email || '—' }}</td>
                 <td><span class="ck-badge" style="background: var(--ck-gray-100); color: var(--ck-gray-800);">{{ log.action }}</span></td>
@@ -81,6 +81,42 @@
         </div>
         <div v-else class="empty-state">
           <p>No system logs found matching your criteria.</p>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-footer" v-if="logs.length > 0">
+          <div class="pagination-info">
+            Showing {{ pagination.from }} to {{ pagination.to }} of {{ pagination.total }} entries
+          </div>
+          <div class="pagination-actions">
+            <button 
+              class="pagination-btn" 
+              :disabled="pagination.current_page === 1"
+              @click="changePage(pagination.current_page - 1)"
+            >
+              Previous
+            </button>
+            
+            <div class="pagination-numbers">
+              <button 
+                v-for="page in visiblePages" 
+                :key="page"
+                class="pagination-number"
+                :class="{ 'active': page === pagination.current_page }"
+                @click="changePage(page)"
+              >
+                {{ page }}
+              </button>
+            </div>
+
+            <button 
+              class="pagination-btn" 
+              :disabled="pagination.current_page === pagination.last_page"
+              @click="changePage(pagination.current_page + 1)"
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
 
@@ -104,12 +140,52 @@ const autoRefresh = ref(true)
 const searchQuery = ref('')
 const statusFilter = ref('all')
 
-const fetchLogs = async () => {
+const pagination = ref({
+  current_page: 1,
+  last_page: 1,
+  total: 0,
+  from: 0,
+  to: 0
+})
+
+let refreshInterval = null
+let searchTimeout = null
+
+onMounted(() => {
+  fetchLogs()
+  
+  // Setup auto-refresh interval
+  refreshInterval = setInterval(() => {
+    if (autoRefresh.value && !isLoading.value) {
+      fetchLogs(pagination.value.current_page)
+    }
+  }, 30000) // 30 seconds
+})
+
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  clearInterval(refreshInterval)
+  clearTimeout(searchTimeout)
+})
+
+const fetchLogs = async (page = 1) => {
   isLoading.value = true
   error.value = null
   try {
-    const data = await getSystemLogs()
-    logs.value = data
+    const params = {
+      page,
+      search: searchQuery.value,
+      status: statusFilter.value
+    }
+    const response = await getSystemLogs(params)
+    logs.value = response.data
+    pagination.value = {
+      current_page: response.current_page,
+      last_page: response.last_page,
+      total: response.total,
+      from: response.from,
+      to: response.to
+    }
   } catch (err) {
     console.error("Failed to fetch logs:", err)
     error.value = "Failed to load system logs."
@@ -118,21 +194,41 @@ const fetchLogs = async () => {
   }
 }
 
-onMounted(() => {
-  fetchLogs()
+const changePage = (page) => {
+  if (page < 1 || page > pagination.value.last_page) return
+  fetchLogs(page)
+}
+
+// Debounced search and direct filter changes
+const handleSearchChange = () => {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    fetchLogs(1)
+  }, 400)
+}
+
+// Watch status filter
+import { watch } from 'vue'
+watch(statusFilter, () => {
+  fetchLogs(1)
 })
 
-const filteredLogs = computed(() => {
-  return logs.value.filter(log => {
-    const query = searchQuery.value.toLowerCase()
-    const matchSearch = (log.action || '').toLowerCase().includes(query) ||
-                        (log.admin_email || '').toLowerCase().includes(query) ||
-                        (log.details || '').toLowerCase().includes(query)
-    
-    const matchStatus = statusFilter.value === 'all' || log.status === statusFilter.value
+watch(searchQuery, handleSearchChange)
 
-    return matchSearch && matchStatus
-  })
+const visiblePages = computed(() => {
+  const current = pagination.value.current_page
+  const last = pagination.value.last_page
+  const delta = 2
+  const left = current - delta
+  const right = current + delta + 1
+  const range = []
+  
+  for (let i = 1; i <= last; i++) {
+    if (i === 1 || i === last || (i >= left && i < right)) {
+      range.push(i)
+    }
+  }
+  return range
 })
 
 const formatDate = (dateString) => {
@@ -348,5 +444,80 @@ input:checked + .slider:before {
   100% {
     transform: rotate(360deg);
   }
+}
+
+/* Pagination Styles */
+.pagination-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-info {
+  font-size: 0.8125rem;
+  color: var(--ck-gray-500);
+}
+
+.pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pagination-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ck-gray-600);
+  background: white;
+  border: 1px solid var(--ck-gray-200);
+  border-radius: var(--ck-radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  border-color: #f97316;
+  color: #f97316;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-numbers {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.pagination-number {
+  min-width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ck-gray-600);
+  background: white;
+  border: 1px solid var(--ck-gray-200);
+  border-radius: var(--ck-radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination-number:hover {
+  border-color: #f97316;
+  color: #f97316;
+}
+
+.pagination-number.active {
+  background: #f97316;
+  border-color: #f97316;
+  color: white;
 }
 </style>

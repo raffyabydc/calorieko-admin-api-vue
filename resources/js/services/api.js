@@ -241,8 +241,11 @@ export async function bulkImportFoods(csvFile) {
 }
 
 // ── System Logs ──
-export async function getSystemLogs() {
-    return fetchJSON('/system-logs')
+export async function getSystemLogs(params = {}) {
+  let url = '/system-logs'
+  const query = new URLSearchParams(params).toString()
+  if (query) url += '?' + query
+  return fetchJSON(url)
 }
 
 // ── Daily Nutrition Summaries ──
