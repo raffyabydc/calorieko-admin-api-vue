@@ -42,7 +42,8 @@ const routes = [
             {
                 path: 'system-logs',
                 name: 'SystemLogs',
-                component: () => import('../views/SystemLogsView.vue')
+                component: () => import('../views/SystemLogsView.vue'),
+                meta: { requiresSuperAdmin: true }
             },
             {
                 path: 'user-analytics/:uid',

@@ -254,12 +254,12 @@ const navItems = computed(() => {
     { name: 'Overview', icon: LayoutDashboard, to: '/dashboard', routeName: 'Overview' },
     { name: 'User Management', icon: Users, to: '/dashboard/user-management', routeName: 'UserManagement' },
     { name: 'Food Database', icon: Database, to: '/dashboard/food-database', routeName: 'FoodDatabase' },
-    { name: 'Report Generator', icon: FileBarChart, to: '/dashboard/report-generator', routeName: 'ReportGenerator' },
-    { name: 'System Logs', icon: Activity, to: '/dashboard/system-logs', routeName: 'SystemLogs' }
+    { name: 'Report Generator', icon: FileBarChart, to: '/dashboard/report-generator', routeName: 'ReportGenerator' }
   ]
   
   if (isSuperAdmin.value) {
-    items.splice(4, 0, { name: 'Admin Management', icon: ShieldAlertIcon, to: '/dashboard/admins', routeName: 'AdminManagement' })
+    items.push({ name: 'Admin Management', icon: ShieldAlertIcon, to: '/dashboard/admins', routeName: 'AdminManagement' })
+    items.push({ name: 'System Logs', icon: Activity, to: '/dashboard/system-logs', routeName: 'SystemLogs' })
   }
   
   return items
