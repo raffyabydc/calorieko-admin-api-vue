@@ -280,8 +280,8 @@
             </form>
           </div>
           <div class="modal__footer">
-            <button type="button" class="btn btn--secondary" @click="closeModal">Cancel</button>
-            <button type="button" class="btn btn--primary" @click="submitForm" :disabled="isSubmitting">
+            <button type="button" class="ck-btn ck-btn--ghost" @click="closeModal">Cancel</button>
+            <button type="button" class="ck-btn ck-btn--primary" @click="submitForm" :disabled="isSubmitting">
               {{ isSubmitting ? 'Saving...' : (isEditMode ? 'Update Item' : 'Save Item') }}
             </button>
           </div>
@@ -330,8 +330,8 @@
             </div>
           </div>
           <div class="modal__footer">
-            <button class="btn btn--secondary" @click="closeImportModal">Cancel</button>
-            <button class="btn btn--primary" @click="submitImport" :disabled="!importFile || isImporting">
+            <button class="ck-btn ck-btn--ghost" @click="closeImportModal">Cancel</button>
+            <button class="ck-btn ck-btn--primary" @click="submitImport" :disabled="!importFile || isImporting">
               {{ isImporting ? 'Importing...' : 'Upload & Import' }}
             </button>
           </div>
@@ -353,8 +353,8 @@
             </p>
           </div>
           <div class="modal__footer">
-            <button class="btn btn--secondary" @click="closeDeleteModal">Cancel</button>
-            <button class="btn btn--danger" @click="confirmDelete" :disabled="isDeleting">
+            <button class="ck-btn ck-btn--ghost" @click="closeDeleteModal">Cancel</button>
+            <button class="ck-btn ck-btn--danger" @click="confirmDelete" :disabled="isDeleting">
               {{ isDeleting ? 'Deleting...' : 'Yes, Delete' }}
             </button>
           </div>
@@ -716,14 +716,6 @@ const confirmDelete = async () => {
   margin-top: 0.5rem;
 }
 
-.btn { padding: 0.5rem 1rem; font-size: 0.875rem; font-weight: 500; border-radius: var(--ck-radius-md); cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
-.btn--secondary { background: white; border-color: var(--ck-gray-300); color: var(--ck-gray-700); }
-.btn--secondary:hover { background: var(--ck-gray-50); }
-.btn--primary { background: var(--ck-primary); color: white; }
-.btn--primary:hover { filter: brightness(1.1); }
-.btn--primary:disabled { opacity: 0.7; cursor: not-allowed; }
-.btn--danger { background: #ef4444; color: white; }
-.btn--danger:hover { background: #dc2626; }
 
 /* Import Modal Extras */
 .csv-schema-box {

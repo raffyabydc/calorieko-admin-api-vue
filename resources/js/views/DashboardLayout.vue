@@ -98,8 +98,8 @@
         <p>Are you sure you want to log out of your current session?</p>
       </div>
       <div class="modal__footer">
-        <button class="btn btn--secondary" @click="cancelLogout">Cancel</button>
-        <button class="btn btn--danger" @click="confirmLogout">Log Out</button>
+        <button class="ck-btn ck-btn--ghost" @click="cancelLogout">Cancel</button>
+        <button class="ck-btn ck-btn--danger" @click="confirmLogout">Log Out</button>
       </div>
     </div>
   </div>
@@ -122,30 +122,98 @@
           <template v-else>
             <div class="form-group">
               <label class="form-label">Current Password</label>
-              <input v-model="passwordForm.current_password" type="password" class="ck-input" required>
+              <div class="ck-input-wrap">
+                <LockIcon :size="16" class="ck-field-icon" />
+                <input 
+                  v-model="passwordForm.current_password" 
+                  :type="showPasswords.current ? 'text' : 'password'" 
+                  class="ck-input" 
+                  placeholder="Enter current password"
+                  required
+                >
+                <button 
+                  type="button" 
+                  class="ck-toggle-visibility" 
+                  @click="showPasswords.current = !showPasswords.current"
+                  tabindex="-1"
+                >
+                  <EyeIcon v-if="!showPasswords.current" :size="16" />
+                  <EyeOffIcon v-else :size="16" />
+                </button>
+              </div>
             </div>
             
             <div class="form-group">
               <label class="form-label">New Password</label>
-              <input v-model="passwordForm.new_password" type="password" class="ck-input" required minlength="8">
+              <div class="ck-input-wrap">
+                <ShieldCheckIcon :size="16" class="ck-field-icon" />
+                <input 
+                  v-model="passwordForm.new_password" 
+                  :type="showPasswords.new ? 'text' : 'password'" 
+                  class="ck-input" 
+                  placeholder="Minimum 8 characters"
+                  required 
+                  @input="checkStrength"
+                >
+                <button 
+                  type="button" 
+                  class="ck-toggle-visibility" 
+                  @click="showPasswords.new = !showPasswords.new"
+                  tabindex="-1"
+                >
+                  <EyeIcon v-if="!showPasswords.new" :size="16" />
+                  <EyeOffIcon v-else :size="16" />
+                </button>
+              </div>
+
+              <!-- Password Strength UI -->
+              <div class="strength-meter">
+                <div class="meter-bar">
+                  <div class="meter-fill" :class="strengthClass" :style="{ width: strengthPercent + '%' }"></div>
+                </div>
+                <ul class="requirements">
+                  <li :class="{ 'met': checks.length }"><CheckCircleIcon :size="12" /> 8 characters minimum</li>
+                  <li :class="{ 'met': checks.case }"><CheckCircleIcon :size="12" /> Lower & uppercase letters</li>
+                  <li :class="{ 'met': checks.number }"><CheckCircleIcon :size="12" /> At least one number</li>
+                  <li :class="{ 'met': checks.symbol }"><CheckCircleIcon :size="12" /> At least one symbol</li>
+                </ul>
+              </div>
             </div>
             
             <div class="form-group">
               <label class="form-label">Confirm New Password</label>
-              <input v-model="passwordForm.new_password_confirmation" type="password" class="ck-input" required minlength="8">
+              <div class="ck-input-wrap">
+                <KeyIcon :size="16" class="ck-field-icon" />
+                <input 
+                  v-model="passwordForm.new_password_confirmation" 
+                  :type="showPasswords.confirm ? 'text' : 'password'" 
+                  class="ck-input" 
+                  placeholder="Repeat new password"
+                  required
+                >
+                <button 
+                  type="button" 
+                  class="ck-toggle-visibility" 
+                  @click="showPasswords.confirm = !showPasswords.confirm"
+                  tabindex="-1"
+                >
+                  <EyeIcon v-if="!showPasswords.confirm" :size="16" />
+                  <EyeOffIcon v-else :size="16" />
+                </button>
+              </div>
             </div>
             
-            <div v-if="passwordStatus === 'error'" style="color: #ef4444; font-size: 0.875rem; padding: 0.5rem; background: #fef2f2; border-radius: 6px;">
-              {{ passwordError }}
+            <div v-if="passwordStatus === 'error'" style="color: #ef4444; font-size: 0.875rem; padding: 0.5rem; background: #fef2f2; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem;">
+               <ShieldAlertIcon :size="16" /> {{ passwordError }}
             </div>
           </template>
 
         </div>
         <div class="modal__footer">
-          <button type="button" class="btn btn--secondary" @click="closePasswordModal">
+          <button type="button" class="ck-btn ck-btn--ghost" @click="closePasswordModal">
             {{ passwordStatus === 'success' ? 'Close' : 'Cancel' }}
           </button>
-          <button v-if="passwordStatus !== 'success'" type="submit" class="btn btn--primary" :disabled="passwordSubmitting">
+          <button v-if="passwordStatus !== 'success'" type="submit" class="ck-btn ck-btn--primary" :disabled="passwordSubmitting || !isPasswordFormValid">
             {{ passwordSubmitting ? 'Updating...' : 'Update Password' }}
           </button>
         </div>
@@ -155,7 +223,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, reactive } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   LayoutDashboard,
@@ -169,7 +237,11 @@ import {
   RefreshCw as RefreshCwIcon,
   ShieldAlert as ShieldAlertIcon,
   Key as KeyIcon,
-  CheckCircle2 as CheckCircle2Icon
+  CheckCircle2 as CheckCircle2Icon,
+  ShieldCheck as ShieldCheckIcon,
+  CheckCircle as CheckCircleIcon,
+  Eye as EyeIcon,
+  EyeOff as EyeOffIcon
 } from 'lucide-vue-next'
 import { adminLogout, updateAdminPassword } from '../services/api.js'
 
@@ -214,12 +286,54 @@ const passwordForm = ref({
   new_password_confirmation: ''
 })
 
+const showPasswords = reactive({
+  current: false,
+  new: false,
+  confirm: false
+})
+
+const checks = reactive({
+  length: false,
+  case: false,
+  number: false,
+  symbol: false
+})
+
+const checkStrength = () => {
+  const pw = passwordForm.value.new_password
+  checks.length = pw.length >= 8
+  checks.case = /[a-z]/.test(pw) && /[A-Z]/.test(pw)
+  checks.number = /[0-9]/.test(pw)
+  checks.symbol = /[!@#$%^&*(),.?":{}|<>]/.test(pw)
+}
+
+const strengthPercent = computed(() => {
+  const count = Object.values(checks).filter(Boolean).length
+  return (count / 4) * 100
+})
+
+const strengthClass = computed(() => {
+  if (strengthPercent.value <= 25) return 'weak'
+  if (strengthPercent.value <= 75) return 'medium'
+  return 'strong'
+})
+
+const isPasswordFormValid = computed(() => {
+  return Object.values(checks).every(Boolean) && 
+         passwordForm.value.new_password === passwordForm.value.new_password_confirmation &&
+         passwordForm.value.current_password.length > 0
+})
+
 const closePasswordModal = () => {
   showPasswordModal.value = false
   setTimeout(() => {
     passwordForm.value = { current_password: '', new_password: '', new_password_confirmation: '' }
     passwordStatus.value = 'idle'
     passwordError.value = ''
+    showPasswords.current = false
+    showPasswords.new = false
+    showPasswords.confirm = false
+    Object.keys(checks).forEach(k => checks[k] = false)
   }, 200)
 }
 
@@ -577,6 +691,61 @@ const cancelLogout = () => {
   box-shadow: 0 0 0 3px rgba(26, 107, 60, 0.1);
 }
 
+.ck-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.ck-field-icon {
+  position: absolute;
+  left: 0.875rem;
+  color: var(--ck-gray-400);
+  pointer-events: none;
+}
+
+.ck-input-wrap .ck-input {
+  padding-left: 2.5rem;
+  padding-right: 2.5rem;
+}
+
+.ck-toggle-visibility {
+  position: absolute;
+  right: 0.875rem;
+  background: none;
+  border: none;
+  color: var(--ck-gray-400);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.ck-toggle-visibility:hover {
+  color: var(--ck-primary);
+}
+
+/* Strength Meter */
+.strength-meter { margin-top: 0.5rem; }
+.meter-bar { height: 4px; background: var(--ck-gray-100); border-radius: 2px; overflow: hidden; margin-bottom: 0.75rem; }
+.meter-fill { height: 100%; transition: all 0.4s ease; }
+.meter-fill.weak { background: #ef4444; }
+.meter-fill.medium { background: #f59e0b; }
+.meter-fill.strong { background: #10b981; }
+
+.requirements { list-style: none; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+.requirements li { 
+  font-size: 0.75rem; 
+  color: var(--ck-gray-400); 
+  display: flex; 
+  align-items: center; 
+  gap: 0.35rem; 
+  transition: color 0.3s;
+}
+.requirements li.met { color: #10b981; font-weight: 500; }
+
 .modal__body {
   padding: 0 1.5rem 1.5rem;
   color: var(--ck-gray-600, #4b5563);
@@ -593,33 +762,10 @@ const cancelLogout = () => {
   border-top: 1px solid rgba(209, 213, 219, 0.5);
 }
 
-.btn {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border-radius: var(--ck-radius-md, 0.375rem);
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid transparent;
-}
-
-.btn--secondary {
-  background: white;
-  border-color: var(--ck-gray-300, #d1d5db);
-  color: var(--ck-gray-700, #374151);
-}
-
-.btn--secondary:hover {
-  background: var(--ck-gray-50, #f9fafb);
-}
-
-.btn--danger {
-  background: #ef4444;
-  color: white;
-}
-
-.btn--danger:hover {
-  background: #dc2626;
+.btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* --- Global Refresh Button (Rule 3) --- */
