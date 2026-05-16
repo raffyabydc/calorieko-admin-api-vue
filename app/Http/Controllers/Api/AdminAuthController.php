@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\SystemLog;
 use App\Models\User;
+use Illuminate\Validation\Rules\Password;
 
 /**
  * Handles admin panel authentication via Laravel Sanctum.
@@ -58,6 +59,7 @@ class AdminAuthController extends Controller
             'token'   => $token,
             'email'   => $user->email,
             'role'    => $user->role,
+            'must_change_password' => (bool)$user->must_change_password,
         ]);
     }
 
@@ -98,7 +100,15 @@ class AdminAuthController extends Controller
     {
         $request->validate([
             'current_password' => 'required|string',
-            'new_password' => 'required|string|min:8|confirmed',
+            'new_password' => [
+                'required',
+                'string',
+                Password::min(8)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols(),
+                'confirmed'
+            ],
         ]);
 
         $user = $request->user();
@@ -108,6 +118,7 @@ class AdminAuthController extends Controller
         }
 
         $user->password = Hash::make($request->new_password);
+        $user->must_change_password = false;
         $user->save();
 
         SystemLog::log($user->email, 'Password Change', null, 'Success', $request->ip(), 'Admin successfully changed their password.');

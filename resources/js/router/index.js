@@ -8,6 +8,12 @@ const routes = [
         meta: { requiresAuth: false }
     },
     {
+        path: '/force-password-change',
+        name: 'ForceChangePassword',
+        component: () => import('../views/ForceChangePasswordView.vue'),
+        meta: { requiresAuth: true }
+    },
+    {
         path: '/dashboard',
         name: 'Dashboard',
         component: () => import('../views/DashboardLayout.vue'),
@@ -63,13 +69,20 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
     const isLoggedIn = sessionStorage.getItem('ck_logged_in') === 'true'
     const role = sessionStorage.getItem('ck_role')
+    const mustChangePassword = sessionStorage.getItem('ck_must_change_password') === 'true'
 
     if (to.meta.requiresAuth && !isLoggedIn) {
         next({ name: 'Login' })
+    } else if (isLoggedIn && mustChangePassword && to.name !== 'ForceChangePassword') {
+        next({ name: 'ForceChangePassword' })
     } else if (to.meta.requiresSuperAdmin && role !== 'Super Admin') {
         next({ name: 'Overview' }) // Redirect moderators away from restricted pages
     } else if (to.name === 'Login' && isLoggedIn) {
-        next({ name: 'Overview' })
+        if (mustChangePassword) {
+            next({ name: 'ForceChangePassword' })
+        } else {
+            next({ name: 'Overview' })
+        }
     } else {
         next()
     }

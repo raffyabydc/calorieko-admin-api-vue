@@ -129,8 +129,13 @@ const handleLogin = async () => {
     sessionStorage.setItem('ck_token', data.token)
     sessionStorage.setItem('ck_email', data.email)
     sessionStorage.setItem('ck_role', data.role || 'Moderator')
+    sessionStorage.setItem('ck_must_change_password', data.must_change_password ? 'true' : 'false')
 
-    router.push({ name: 'Overview' })
+    if (data.must_change_password) {
+      router.push({ name: 'ForceChangePassword' })
+    } else {
+      router.push({ name: 'Overview' })
+    }
   } catch (err) {
     errorMessage.value = err.message || 'Invalid email or password.'
   } finally {

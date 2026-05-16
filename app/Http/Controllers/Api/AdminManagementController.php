@@ -77,6 +77,7 @@ class AdminManagementController extends Controller
             'password' => Hash::make($request->password),
             'role' => 'Moderator',
             'is_active' => true,
+            'must_change_password' => true,
         ]);
 
         SystemLog::log(
