@@ -34,10 +34,19 @@
                 <LockIcon :size="16" class="field-icon" />
                 <input 
                   v-model="form.current_password" 
-                  type="password" 
+                  :type="showPasswords.current ? 'text' : 'password'" 
                   placeholder="Enter temporary password" 
                   required
                 >
+                <button 
+                  type="button" 
+                  class="toggle-visibility" 
+                  @click="showPasswords.current = !showPasswords.current"
+                  tabindex="-1"
+                >
+                  <EyeIcon v-if="!showPasswords.current" :size="16" />
+                  <EyeOffIcon v-else :size="16" />
+                </button>
               </div>
             </div>
 
@@ -47,11 +56,20 @@
                 <ShieldCheckIcon :size="16" class="field-icon" />
                 <input 
                   v-model="form.new_password" 
-                  type="password" 
+                  :type="showPasswords.new ? 'text' : 'password'" 
                   placeholder="Minimum 8 characters" 
                   required
                   @input="checkStrength"
                 >
+                <button 
+                  type="button" 
+                  class="toggle-visibility" 
+                  @click="showPasswords.new = !showPasswords.new"
+                  tabindex="-1"
+                >
+                  <EyeIcon v-if="!showPasswords.new" :size="16" />
+                  <EyeOffIcon v-else :size="16" />
+                </button>
               </div>
               
               <!-- Password Strength UI -->
@@ -74,10 +92,19 @@
                 <KeyIcon :size="16" class="field-icon" />
                 <input 
                   v-model="form.new_password_confirmation" 
-                  type="password" 
+                  :type="showPasswords.confirm ? 'text' : 'password'" 
                   placeholder="Repeat new password" 
                   required
                 >
+                <button 
+                  type="button" 
+                  class="toggle-visibility" 
+                  @click="showPasswords.confirm = !showPasswords.confirm"
+                  tabindex="-1"
+                >
+                  <EyeIcon v-if="!showPasswords.confirm" :size="16" />
+                  <EyeOffIcon v-else :size="16" />
+                </button>
               </div>
             </div>
 
@@ -111,7 +138,9 @@ import {
   Key as KeyIcon, 
   CheckCircle as CheckCircleIcon,
   AlertCircle as AlertCircleIcon,
-  LogOut as LogOutIcon
+  LogOut as LogOutIcon,
+  Eye as EyeIcon,
+  EyeOff as EyeOffIcon
 } from 'lucide-vue-next'
 import { updateAdminPassword, adminLogout } from '../services/api.js'
 
@@ -123,6 +152,12 @@ const form = reactive({
   current_password: '',
   new_password: '',
   new_password_confirmation: ''
+})
+
+const showPasswords = reactive({
+  current: false,
+  new: false,
+  confirm: false
 })
 
 const checks = reactive({
@@ -255,11 +290,30 @@ const handleLogout = async () => {
 
 .input-wrap input {
   width: 100%;
-  padding: 0.75rem 1rem 0.75rem 2.75rem;
+  padding: 0.75rem 3rem 0.75rem 2.75rem;
   border: 1.5px solid #e2e8f0;
   border-radius: 0.75rem;
   font-size: 0.875rem;
   transition: all 0.2s;
+}
+
+.toggle-visibility {
+  position: absolute;
+  right: 1rem;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.2s;
+  z-index: 10;
+}
+
+.toggle-visibility:hover {
+  color: #3aaa68;
 }
 
 .input-wrap input:focus {
