@@ -10,10 +10,23 @@ use Illuminate\Http\JsonResponse;
 class SystemLogController extends Controller
 {
     /**
+     * Enforce Super Admin Only logic.
+     */
+    private function requireSuperAdmin(Request $request)
+    {
+        $user = $request->user();
+        if (!$user || $user->role !== 'Super Admin') {
+            abort(403, 'Permission denied. Only Super Admins can access this resource.');
+        }
+    }
+
+    /**
      * Admin: List all system logs.
      */
     public function index(Request $request): JsonResponse
     {
+        $this->requireSuperAdmin($request);
+
         $query = SystemLog::query();
 
         if ($request->filled('search')) {
