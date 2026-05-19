@@ -93,8 +93,8 @@ class FoodItemController extends Controller
     {
         $query = FoodItem::query();
 
-        // Hide protected dishes by default — they're inert in this context
-        if (!$request->boolean('show_usda', false)) {
+        // Show protected dishes by default — only hide if show_usda is explicitly false
+        if (!$request->boolean('show_usda', true)) {
             $query->whereNotIn('ml_label', self::USDA_PROTECTED_LABELS)
                   ->where('data_source', 'not like', 'USDA%');
         }

@@ -52,7 +52,7 @@
       </div>
 
       <!-- Stats Bar -->
-      <div v-if="!loading && foods.length > 0" class="stats-bar">
+      <div v-if="!loading" class="stats-bar">
         <span class="stats-chip">📊 {{ foods.length }} items</span>
         <span class="stats-chip">🇵🇭 {{ fnriCount }} FNRI</span>
         <span class="stats-chip">🇺🇸 {{ usdaCount }} USDA</span>
@@ -391,7 +391,7 @@ const foods = ref([])
 const serverProtectedCount = ref(0)
 const loading = ref(true)
 const error = ref(null)
-const showUsda = ref(false)
+const showUsda = ref(true)
 
 const searchQuery = ref('')
 const categoryFilter = ref('all')
@@ -455,7 +455,7 @@ const fetchFoodsList = async () => {
   loading.value = true
   error.value = null
   try {
-    const data = await getFoods(showUsda.value ? { show_usda: true } : {})
+    const data = await getFoods({ show_usda: showUsda.value })
     foods.value = data.foods || []
     serverProtectedCount.value = data.protected_count || 0
   } catch (err) {
