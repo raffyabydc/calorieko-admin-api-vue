@@ -109,7 +109,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-for="item in filteredFoods" :key="item.food_id">
+              <tr v-for="item in paginatedFoods" :key="item.food_id">
                 <td v-if="columns.name_en.show" style="font-weight: 500; color: var(--ck-gray-900);">{{ item.name_en }}</td>
                 <td v-if="columns.name_ph.show">{{ item.name_ph }}</td>
                 <td v-if="columns.category.show"><span class="ck-badge ck-badge--outline">{{ item.category }}</span></td>
@@ -146,6 +146,48 @@
               </tr>
             </tbody>
           </table>
+
+          <!-- Pagination Bar -->
+          <div class="pagination-bar" v-if="totalPages > 1">
+            <div class="pagination-meta">
+              Showing {{ (currentPage - 1) * itemsPerPage + 1 }} to {{ Math.min(currentPage * itemsPerPage, filteredFoods.length) }} of {{ filteredFoods.length }} items
+            </div>
+            <div class="pagination-actions">
+              <button 
+                @click="currentPage = 1" 
+                :disabled="currentPage === 1" 
+                class="pagination-btn"
+                title="First Page"
+              >
+                «
+              </button>
+              <button 
+                @click="currentPage--" 
+                :disabled="currentPage === 1" 
+                class="pagination-btn"
+                title="Previous Page"
+              >
+                ‹
+              </button>
+              <span class="pagination-page-indicator">Page {{ currentPage }} of {{ totalPages }}</span>
+              <button 
+                @click="currentPage++" 
+                :disabled="currentPage === totalPages" 
+                class="pagination-btn"
+                title="Next Page"
+              >
+                ›
+              </button>
+              <button 
+                @click="currentPage = totalPages" 
+                :disabled="currentPage === totalPages" 
+                class="pagination-btn"
+                title="Last Page"
+              >
+                »
+              </button>
+            </div>
+          </div>
         </div>
         <div v-else class="empty-state">
           <p>No food items found matching your search.</p>
@@ -390,7 +432,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import {
   Search as SearchIcon,
   Plus as PlusIcon,
@@ -523,6 +565,25 @@ const filteredFoods = computed(() => {
     const catMatch = categoryFilter.value === 'all' || item.category === categoryFilter.value
     return searchMatch && catMatch
   })
+})
+
+// Pagination State
+const currentPage = ref(1)
+const itemsPerPage = ref(10) 
+
+const totalPages = computed(() => {
+  return Math.max(1, Math.ceil(filteredFoods.value.length / itemsPerPage.value))
+})
+
+const paginatedFoods = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value
+  const end = start + itemsPerPage.value
+  return filteredFoods.value.slice(start, end)
+})
+
+// Watch filters to reset page to 1
+watch([searchQuery, categoryFilter, showUsda], () => {
+  currentPage.value = 1
 })
 
 const fnriCount = computed(() => foods.value.filter(f => (f.data_source || '').includes('FNRI')).length)
@@ -857,7 +918,60 @@ const confirmDelete = async () => {
 .ck-toast--error { border-left: 4px solid #ef4444; color: var(--ck-gray-900); }
 .toast-close { background: transparent; border: none; cursor: pointer; color: var(--ck-gray-400); padding: 0.125rem; display: flex; align-items: center; margin-left: auto; }
 .toast-close:hover { color: var(--ck-gray-700); }
-.toast-slide-enter-active, .toast-slide-leave-active { transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
-.toast-slide-enter-from { opacity: 0; transform: translateY(1rem) scale(0.95); }
-.toast-slide-leave-to { opacity: 0; transform: translateY(1rem) scale(0.95); }
+/* Pagination Bar styles */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--ck-gray-200);
+  background: white;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.pagination-meta {
+  font-size: 0.8125rem;
+  color: var(--ck-gray-500);
+  font-weight: 500;
+}
+.pagination-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.pagination-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ck-gray-700);
+  background: white;
+  border: 1px solid var(--ck-gray-300);
+  border-radius: var(--ck-radius-md);
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+}
+.pagination-btn:hover:not(:disabled) {
+  background: var(--ck-gray-50);
+  border-color: var(--ck-gray-400);
+  color: var(--ck-gray-900);
+}
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--ck-gray-50);
+  color: var(--ck-gray-400);
+  border-color: var(--ck-gray-200);
+}
+.pagination-page-indicator {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ck-gray-700);
+  padding: 0 0.5rem;
+}
 </style>

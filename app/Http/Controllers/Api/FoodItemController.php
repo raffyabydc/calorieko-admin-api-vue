@@ -92,7 +92,7 @@ class FoodItemController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = FoodItem::query();
+        $query = FoodItem::query()->orderByDesc('food_id');
 
         // Show protected dishes by default — only hide if show_usda is explicitly false
         if (!$request->boolean('show_usda', true)) {
