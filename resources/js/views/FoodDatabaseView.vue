@@ -49,6 +49,22 @@
           <option value="Dessert">Dessert</option>
           <option value="Condiment">Condiment</option>
         </select>
+
+        <!-- Columns Toggler -->
+        <div class="columns-selector-wrapper">
+          <button @click="toggleColumnsDropdown" class="columns-btn" title="Toggle Columns">
+            <ColumnsIcon :size="18" />
+          </button>
+          
+          <div v-if="showColumnsDropdown" class="columns-dropdown">
+            <div class="dropdown-title">Toggle Columns</div>
+            <div class="dropdown-divider"></div>
+            <label v-for="(col, key) in columns" :key="key" class="dropdown-item">
+              <input type="checkbox" v-model="col.show" />
+              <span>{{ col.label }}</span>
+            </label>
+          </div>
+        </div>
       </div>
 
       <!-- Stats Bar -->
@@ -80,38 +96,38 @@
           <table class="ck-table">
             <thead>
               <tr>
-                <th>Food Name (EN)</th>
-                <th>Local Name (PH)</th>
-                <th>Category</th>
-                <th>ML Label</th>
-                <th style="text-align: center;">Calories / 100g</th>
-                <th style="text-align: center;">Protein / 100g</th>
-                <th style="text-align: center;">Carbs / 100g</th>
-                <th style="text-align: center;">Fat / 100g</th>
-                <th>Source</th>
-                <th style="text-align: center;">Actions</th>
+                <th v-if="columns.name_en.show">Food Name (EN)</th>
+                <th v-if="columns.name_ph.show">Local Name (PH)</th>
+                <th v-if="columns.category.show">Category</th>
+                <th v-if="columns.ml_label.show">ML Label</th>
+                <th v-if="columns.calories.show" style="text-align: center;">Calories / 100g</th>
+                <th v-if="columns.protein.show" style="text-align: center;">Protein / 100g</th>
+                <th v-if="columns.carbs.show" style="text-align: center;">Carbs / 100g</th>
+                <th v-if="columns.fat.show" style="text-align: center;">Fat / 100g</th>
+                <th v-if="columns.source.show">Source</th>
+                <th v-if="columns.actions.show" style="text-align: center;">Actions</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="item in filteredFoods" :key="item.food_id">
-                <td style="font-weight: 500; color: var(--ck-gray-900);">{{ item.name_en }}</td>
-                <td>{{ item.name_ph }}</td>
-                <td><span class="ck-badge ck-badge--outline">{{ item.category }}</span></td>
-                <td>
+                <td v-if="columns.name_en.show" style="font-weight: 500; color: var(--ck-gray-900);">{{ item.name_en }}</td>
+                <td v-if="columns.name_ph.show">{{ item.name_ph }}</td>
+                <td v-if="columns.category.show"><span class="ck-badge ck-badge--outline">{{ item.category }}</span></td>
+                <td v-if="columns.ml_label.show">
                   <span class="ml-label-chip" :class="item.ml_label === 'manual_entry' ? 'ml-label-chip--manual' : 'ml-label-chip--ai'">
                     {{ item.ml_label || 'manual_entry' }}
                   </span>
                 </td>
-                <td style="text-align: center; font-weight: 600;">{{ item.calories_per_100g }}</td>
-                <td style="text-align: center;">{{ item.protein_per_100g }}g</td>
-                <td style="text-align: center;">{{ item.carbs_per_100g }}g</td>
-                <td style="text-align: center;">{{ item.fat_per_100g }}g</td>
-                <td>
+                <td v-if="columns.calories.show" style="text-align: center; font-weight: 600;">{{ item.calories_per_100g }}</td>
+                <td v-if="columns.protein.show" style="text-align: center;">{{ item.protein_per_100g }}g</td>
+                <td v-if="columns.carbs.show" style="text-align: center;">{{ item.carbs_per_100g }}g</td>
+                <td v-if="columns.fat.show" style="text-align: center;">{{ item.fat_per_100g }}g</td>
+                <td v-if="columns.source.show">
                   <span class="source-chip" :class="sourceClass(item.data_source)">
                     {{ item.data_source || 'DOST_FNRI_FCT' }}
                   </span>
                 </td>
-                <td style="text-align: center;">
+                <td v-if="columns.actions.show" style="text-align: center;">
                   <template v-if="item.is_usda_protected">
                     <span class="usda-verified-badge" title="This dish uses USDA-verified nutrition data and cannot be edited. Changes would be ignored by the mobile app.">
                       <ShieldCheckIcon :size="14" />
@@ -374,7 +390,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import {
   Search as SearchIcon,
   Plus as PlusIcon,
@@ -382,7 +398,8 @@ import {
   Trash as TrashIcon,
   X as XIcon,
   Upload as UploadIcon,
-  ShieldCheck as ShieldCheckIcon
+  ShieldCheck as ShieldCheckIcon,
+  Columns as ColumnsIcon
 } from 'lucide-vue-next'
 import { getFoods, createFood, updateFood, deleteFood, bulkImportFoods } from '../services/api.js'
 
@@ -395,6 +412,29 @@ const showUsda = ref(true)
 
 const searchQuery = ref('')
 const categoryFilter = ref('all')
+
+// Columns Toggler State (ML Label and Source hidden by default!)
+const columns = ref({
+  name_en: { label: 'Food Name (EN)', show: true },
+  name_ph: { label: 'Local Name (PH)', show: true },
+  category: { label: 'Category', show: true },
+  ml_label: { label: 'ML Label', show: false },
+  calories: { label: 'Calories', show: true },
+  protein: { label: 'Protein', show: true },
+  carbs: { label: 'Carbs', show: true },
+  fat: { label: 'Fat', show: true },
+  source: { label: 'Source', show: false },
+  actions: { label: 'Actions', show: true }
+})
+const showColumnsDropdown = ref(false)
+const toggleColumnsDropdown = () => {
+  showColumnsDropdown.value = !showColumnsDropdown.value
+}
+const closeDropdowns = (e) => {
+  if (!e.target.closest('.columns-selector-wrapper')) {
+    showColumnsDropdown.value = false
+  }
+}
 
 // Toast State
 const toast = ref({ show: false, message: '', type: 'success' })
@@ -468,6 +508,11 @@ const fetchFoodsList = async () => {
 
 onMounted(() => {
   fetchFoodsList()
+  document.addEventListener('click', closeDropdowns)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeDropdowns)
 })
 
 // Computeds
@@ -635,6 +680,76 @@ const confirmDelete = async () => {
 .header-actions { display: flex; gap: 0.75rem; align-items: center; }
 
 .filters-bar { display: flex; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center; }
+
+/* Columns Dropdown Selector */
+.columns-selector-wrapper {
+  position: relative;
+  display: inline-block;
+}
+.columns-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  height: 38px;
+  width: 38px;
+  border-radius: var(--ck-radius-md);
+  border: 1px solid var(--ck-gray-300);
+  background: white;
+  color: var(--ck-gray-600);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.columns-btn:hover {
+  background: var(--ck-gray-50);
+  border-color: var(--ck-gray-400);
+}
+.columns-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border: 1px solid var(--ck-gray-200);
+  border-radius: var(--ck-radius-lg);
+  padding: 0.75rem 0.5rem;
+  min-width: 180px;
+  z-index: 1000;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+.dropdown-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ck-gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 0.5rem 0.25rem 0.5rem;
+}
+.dropdown-divider {
+  height: 1px;
+  background: var(--ck-gray-100);
+  margin: 0.25rem 0;
+}
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  font-size: 0.8125rem;
+  color: var(--ck-gray-700);
+  cursor: pointer;
+  border-radius: var(--ck-radius-md);
+  user-select: none;
+  transition: background 0.15s;
+}
+.dropdown-item:hover {
+  background: var(--ck-gray-50);
+}
+.dropdown-item input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--ck-primary);
+  cursor: pointer;
+}
 .search-wrapper { position: relative; flex: 1; min-width: 250px; }
 .search-icon { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: var(--ck-gray-400); pointer-events: none; }
 
