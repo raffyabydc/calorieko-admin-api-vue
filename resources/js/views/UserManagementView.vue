@@ -75,7 +75,6 @@
                 <th style="text-align: center;">TDEE (kcal)</th>
                 <th>Goal</th>
                 <th style="text-align: center;">Consistency</th>
-                <th style="text-align: center;">Scale Linked</th>
                 <th style="text-align: center;">Actions</th>
               </tr>
             </thead>
@@ -100,9 +99,6 @@
                 <td style="text-align: center;">
                   <span v-if="isUserActive(p)" class="ck-badge ck-badge--success">Active</span>
                   <span v-else class="ck-badge ck-badge--warning">Dormant</span>
-                </td>
-                <td style="text-align: center;">
-                  <span class="ck-badge ck-badge--outline ck-badge--error">No</span>
                 </td>
                 <td style="text-align: center; position: relative;">
                   <button class="action-btn" @click.stop="toggleMenu($event, p)" title="More Actions">
