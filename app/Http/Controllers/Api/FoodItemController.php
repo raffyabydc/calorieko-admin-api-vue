@@ -22,7 +22,7 @@ class FoodItemController extends Controller
         'humba_pork', 'kinilaw_tuna', 'kwekwek', 'lawuy', 'linatan',
         'mackerel_fried', 'menudo', 'milkfish_fried', 'pinakbet',
         'rice_well_milled', 'sinabawang_bangus', 'sinigang_pork',
-        'sinuglaw_pork', 'tilapia_fried', 'tinapa_ginisa', 'udong',
+        'sinuglaw_pork', 'tilapia_fried', 'udong',
     ];
 
     /**
