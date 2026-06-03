@@ -3,23 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-
-Route::get('/{any}', function (\Illuminate\Http\Request $request) {
-    // Temporary emergency reset via query parameter
-    if ($request->query('reset_admin_now') === 'yes') {
-        $users = \App\Models\User::all();
-        foreach ($users as $user) {
-            if ($user->email === 'admin@calorieko.ph') {
-                $user->password = \Illuminate\Support\Facades\Hash::make('calorieko2026');
-                $user->save();
-                return 'Admin password successfully reset to calorieko2026! You should now remove this code and push again.';
-            }
-        }
-        return 'Admin user not found.';
-    }
-
+Route::get('/{any}', function () {
     return view('app');
 })->where('any', '.*');
 
