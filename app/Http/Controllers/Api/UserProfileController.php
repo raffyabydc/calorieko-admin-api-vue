@@ -151,15 +151,21 @@ class UserProfileController extends Controller
             $profile->is_active = !$profile->is_active;
             $profile->save();
 
-            // Sync status to Firebase Authentication
+            // Sync status to Firebase Authentication (best-effort)
             try {
-                if ($profile->is_active) {
-                    app('firebase.auth')->enableUser($uid);
+                $credentialsPath = config('firebase.projects.app.credentials');
+                if ($credentialsPath && file_exists(base_path($credentialsPath))) {
+                    if ($profile->is_active) {
+                        app('firebase.auth')->enableUser($uid);
+                    } else {
+                        app('firebase.auth')->disableUser($uid);
+                    }
                 } else {
-                    app('firebase.auth')->disableUser($uid);
+                    \Log::warning("Firebase credentials not configured — skipping Auth status sync for {$uid}");
                 }
             } catch (\Exception $e) {
-                \Log::error("Failed to sync Firebase Auth status for {$uid}: " . $e->getMessage());
+                // Non-fatal: local status was already updated
+                \Log::warning("Firebase Auth status sync skipped for {$uid}: " . $e->getMessage());
             }
 
             $adminEmail = $user ? $user->email : (config('app.admin_email') ?? 'admin@calorieko.com');
@@ -230,11 +236,17 @@ class UserProfileController extends Controller
 
         $profile->delete();
 
-        // Delete from Firebase DB as well
+        // Delete from Firebase Auth as well (best-effort)
         try {
-            app('firebase.auth')->deleteUser($uid);
+            $credentialsPath = config('firebase.projects.app.credentials');
+            if ($credentialsPath && file_exists(base_path($credentialsPath))) {
+                app('firebase.auth')->deleteUser($uid);
+            } else {
+                \Log::warning("Firebase credentials not configured — skipping Firebase Auth deletion for {$uid}");
+            }
         } catch (\Exception $e) {
-            \Log::error("Failed to delete user from Firebase Auth {$uid}: " . $e->getMessage());
+            // Non-fatal: user may already be deleted from Firebase, or credentials missing
+            \Log::warning("Firebase Auth deletion skipped for {$uid}: " . $e->getMessage());
         }
 
         $adminEmail = $user ? $user->email : (config('app.admin_email') ?? 'admin@calorieko.com');
