@@ -3,6 +3,19 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+
+// Temporary emergency route to reset the admin password on the live server
+Route::get('/emergency-password-reset', function () {
+    $user = User::find(2); // The super admin
+    if ($user) {
+        $user->password = Hash::make('calorieko2026');
+        $user->save();
+        return 'Admin password successfully reset to calorieko2026! You should now remove this route and push again for security.';
+    }
+    return 'Admin user not found.';
+});
 
 Route::get('/{any}', function () {
     return view('app');
