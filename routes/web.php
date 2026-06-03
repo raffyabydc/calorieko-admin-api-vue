@@ -6,20 +6,20 @@ use Illuminate\Support\Facades\Http;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 
-// Temporary emergency route to reset the admin password on the live server
-Route::get('/emergency-password-reset', function () {
-    $users = User::all();
-    foreach ($users as $user) {
-        if ($user->email === 'admin@calorieko.ph') {
-            $user->password = Hash::make('calorieko2026');
-            $user->save();
-            return 'Admin password successfully reset to calorieko2026! You should now remove this route and push again for security.';
+Route::get('/{any}', function (\Illuminate\Http\Request $request) {
+    // Temporary emergency reset via query parameter
+    if ($request->query('reset_admin_now') === 'yes') {
+        $users = \App\Models\User::all();
+        foreach ($users as $user) {
+            if ($user->email === 'admin@calorieko.ph') {
+                $user->password = \Illuminate\Support\Facades\Hash::make('calorieko2026');
+                $user->save();
+                return 'Admin password successfully reset to calorieko2026! You should now remove this code and push again.';
+            }
         }
+        return 'Admin user not found.';
     }
-    return 'Admin user not found.';
-});
 
-Route::get('/{any}', function () {
     return view('app');
 })->where('any', '.*');
 
