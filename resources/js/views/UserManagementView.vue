@@ -390,9 +390,6 @@
             <button class="dropdown-item" :class="selectedUserForMenu.is_active !== false ? 'dropdown-item--warning' : ''" @click="deactivateUser(selectedUserForMenu); activeMenu = null">
               <UserXIcon :size="14" /> {{ selectedUserForMenu.is_active !== false ? 'Deactivate User' : 'Reactivate User' }}
             </button>
-            <button class="dropdown-item dropdown-item--danger" @click="deleteUser(selectedUserForMenu); activeMenu = null">
-              <TrashIcon :size="14" /> Delete User
-            </button>
           </template>
         </div>
       </Transition>
@@ -412,7 +409,6 @@ import {
   FileText as FileTextIcon,
   MoreVertical as MoreVerticalIcon,
   Key as KeyIcon,
-  Trash as TrashIcon,
   XCircle as XCircleIcon,
   BarChart2 as BarChart2Icon
 } from 'lucide-vue-next'
