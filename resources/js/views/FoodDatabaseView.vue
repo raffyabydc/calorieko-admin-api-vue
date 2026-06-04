@@ -69,13 +69,9 @@
 
       <!-- Stats Bar -->
       <div v-if="!loading" class="stats-bar">
-        <span class="stats-chip">📊 {{ foods.length }} items</span>
-        <span class="stats-chip">🇵🇭 {{ fnriCount }} FNRI</span>
-        <span class="stats-chip">🇺🇸 {{ usdaCount }} USDA</span>
-        <span class="stats-chip">🤖 {{ mlCount }} ML-labeled</span>
         <label class="usda-toggle" title="USDA-verified dishes use core nutrition data and cannot be edited here.">
           <input type="checkbox" v-model="showUsda" @change="fetchFoodsList" />
-          <span>Show {{ serverProtectedCount }} USDA-protected (read-only)</span>
+          <span>Show USDA-protected (read-only)</span>
         </label>
       </div>
 
@@ -586,10 +582,7 @@ watch([searchQuery, categoryFilter, showUsda], () => {
   currentPage.value = 1
 })
 
-const fnriCount = computed(() => foods.value.filter(f => (f.data_source || '').includes('FNRI')).length)
-const usdaCount = computed(() => foods.value.filter(f => (f.data_source || '').includes('USDA')).length)
-const mlCount = computed(() => foods.value.filter(f => f.ml_label && f.ml_label !== 'manual_entry').length)
-const usdaProtectedCount = computed(() => foods.value.filter(f => f.is_usda_protected).length)
+
 
 // Source tag styling
 const sourceClass = (source) => {
